@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import UpdateBanner from "./UpdateBanner";
-import { useSocial } from "./useSocial";
+import { PLAYABLE_GAMES, useSocial } from "./useSocial";
 import FriendsPanel from "./FriendsPanel";
 import LobbyScreen from "./LobbyScreen";
+import ImpostorScreen from "./ImpostorScreen";
 import "./App.css";
 
 type User = {
@@ -25,6 +26,8 @@ function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState("");
+  // Jeu cliqué depuis l'accueil — mis en avant sur l'écran de groupe.
+  const [pickedGame, setPickedGame] = useState<string | null>(null);
   const social = useSocial(screen.kind === "home");
 
   useEffect(() => {
@@ -105,7 +108,7 @@ function App() {
       <main className="screen">
         <UpdateBanner />
         <div className="card">
-          <p className="muted">Une partie t'attend dans le lobby</p>
+          <p className="muted">Ta table t'attend</p>
           <p className="pending-code">{pending.code}</p>
           <p className="muted small">
             {pending.members.map((m) => m.display_name).join(", ")}
@@ -117,9 +120,25 @@ function App() {
             Se reconnecter
           </button>
           <button className="ghost-btn" onClick={social.leaveLobby}>
-            Quitter le lobby
+            Quitter la table
           </button>
         </div>
+      </main>
+    );
+  }
+
+  // Partie en cours : l'écran de jeu prend toute la place.
+  if (social.lobby && social.gameView) {
+    return (
+      <main className="screen screen-top">
+        <UpdateBanner />
+        <ImpostorScreen
+          view={social.gameView}
+          myPlayerId={String(user.id)}
+          isHost={social.lobby.host_id === user.id}
+          onAction={social.gameAction}
+          onEnd={social.endGame}
+        />
       </main>
     );
   }
@@ -132,17 +151,20 @@ function App() {
           lobby={social.lobby}
           meId={user.id}
           friends={social.friends}
+          games={social.games}
+          initialGameId={pickedGame}
           onInvite={social.inviteToLobby}
           onKick={social.kickFromLobby}
           onLeave={social.leaveLobby}
           onChat={social.sendChat}
+          onStartGame={social.startGame}
         />
       </main>
     );
   }
 
   return (
-    <main className="screen">
+    <main className="screen screen-top">
       <UpdateBanner />
 
       {social.invites.map((inv) => (
@@ -165,52 +187,88 @@ function App() {
         </div>
       ))}
 
-      <div className="card">
-        {user.avatar_url ? (
-          <img className="avatar" src={user.avatar_url} alt="" />
-        ) : (
-          <div className="avatar avatar-fallback">
-            {user.display_name.slice(0, 1).toUpperCase()}
+      <div className="launcher">
+        <header className="launcher-header">
+          <div className="launcher-me">
+            {user.avatar_url ? (
+              <img className="online-avatar" src={user.avatar_url} alt="" />
+            ) : (
+              <span className="online-avatar online-avatar-fallback">
+                {user.display_name.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <div>
+              <div className="launcher-name">{user.display_name}</div>
+              <div className="muted small">
+                <span className={social.connected ? "dot dot-on" : "dot dot-off"} />
+                {social.connected ? "En ligne" : "Reconnexion…"}
+              </div>
+            </div>
           </div>
-        )}
-        <h1 className="welcome">
-          Salut, <span className="brand-accent">{user.display_name}</span> !
-        </h1>
-        <p className="muted">
-          <span className={social.connected ? "dot dot-on" : "dot dot-off"} />
-          {social.connected ? "Connecté au serveur" : "Reconnexion…"}
-        </p>
+          <div className="brand brand-small">
+            y<span className="brand-accent">GAMES</span>
+          </div>
+          <button className="ghost-btn" onClick={handleLogout}>
+            Se déconnecter
+          </button>
+        </header>
 
-        <LobbyControls
-          onCreate={social.createLobby}
-          onJoin={social.joinLobby}
-        />
+        <div className="launcher-body">
+          <section className="launcher-main">
+            <h2 className="online-title">Jouer</h2>
+            <div className="launcher-grid">
+              {social.games.map((g) => (
+                <button
+                  key={g.id}
+                  className="game-card-lg"
+                  disabled={!PLAYABLE_GAMES.has(g.id) || !social.connected}
+                  title={g.description}
+                  onClick={async () => {
+                    setPickedGame(g.id);
+                    await social.createLobby();
+                  }}
+                >
+                  <span className="game-icon-lg">{g.icon}</span>
+                  <span className="game-name">{g.name}</span>
+                  <span className="muted small">
+                    {PLAYABLE_GAMES.has(g.id)
+                      ? `${g.min_players}–${g.max_players} joueurs`
+                      : "bientôt"}
+                  </span>
+                </button>
+              ))}
+              {social.games.length === 0 && (
+                <p className="muted small">Connexion au serveur…</p>
+              )}
+            </div>
+            <p className="muted small launcher-hint">
+              Choisis un jeu : ça ouvre une table, tu invites, vous enchaînez
+              les parties sans vous disperser.
+            </p>
+            <JoinByCode onJoin={social.joinLobby} />
+          </section>
 
-        <FriendsPanel
-          friends={social.friends}
-          incoming={social.incoming}
-          outgoing={social.outgoing}
-          onAdd={social.addFriend}
-          onAccept={social.acceptFriend}
-          onDecline={social.declineFriend}
-          onRemove={social.removeFriend}
-        />
+          <aside className="launcher-side">
+            <FriendsPanel
+              friends={social.friends}
+              incoming={social.incoming}
+              outgoing={social.outgoing}
+              onAdd={social.addFriend}
+              onAccept={social.acceptFriend}
+              onDecline={social.declineFriend}
+              onRemove={social.removeFriend}
+            />
+          </aside>
+        </div>
 
-        <button className="ghost-btn" onClick={handleLogout}>
-          Se déconnecter
-        </button>
-
-        <p className="version">yGAMES v{version} — Phase 2</p>
+        <p className="version">yGAMES v{version}</p>
       </div>
     </main>
   );
 }
 
-/** Créer un lobby, ou en rejoindre un par code. */
-function LobbyControls(props: {
-  onCreate: () => Promise<string | null>;
-  onJoin: (code: string) => Promise<string | null>;
-}) {
+/** Rejoindre la table d'un pote avec son code. */
+function JoinByCode(props: { onJoin: (code: string) => Promise<string | null> }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -221,28 +279,20 @@ function LobbyControls(props: {
   }
 
   return (
-    <div className="lobby-controls">
-      <button
-        className="discord-btn create-lobby-btn"
-        onClick={async () => setError(await props.onCreate())}
-      >
-        Créer un lobby
+    <form className="add-friend join-code" onSubmit={join}>
+      <input
+        className="add-input code-input"
+        value={code}
+        onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
+        placeholder="CODE"
+        maxLength={4}
+        spellCheck={false}
+      />
+      <button className="add-btn" disabled={code.trim().length < 4}>
+        Rejoindre une table
       </button>
-      <form className="add-friend" onSubmit={join}>
-        <input
-          className="add-input code-input"
-          value={code}
-          onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
-          placeholder="CODE"
-          maxLength={4}
-          spellCheck={false}
-        />
-        <button className="add-btn" disabled={code.trim().length < 4}>
-          Rejoindre
-        </button>
-      </form>
-      {error && <p className="error small">{error}</p>}
-    </div>
+      {error && <span className="error small">{error}</span>}
+    </form>
   );
 }
 

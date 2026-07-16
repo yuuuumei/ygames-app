@@ -21,6 +21,7 @@ load_dotenv()  # charge server/.env
 
 import db  # noqa: E402  (après load_dotenv pour que DATABASE_PATH soit lu)
 import lobbies as lb  # noqa: E402
+import game_sessions as gs  # noqa: E402
 
 DISCORD_API = "https://discord.com/api/v10"
 CLIENT_ID = os.environ["DISCORD_CLIENT_ID"]
@@ -190,6 +191,10 @@ def ws_connect(auth):
         lobby = lb.set_connected(uid, True)
         if lobby:
             broadcast_lobby(lobby)
+            # Une partie en cours ? Le runner resynchronise sa vue.
+            session = gs.get(lobby["code"])
+            if session and uid in session["user_ids"]:
+                session["runner"].reconnect(str(uid))
 
 
 @socketio.on("disconnect")
@@ -208,6 +213,10 @@ def ws_disconnect(reason=None):
         if lobby:
             broadcast_lobby(lobby)
             socketio.start_background_task(_grace_timeout, uid, lobby["code"])
+            # Le jeu en cours gère l'absence (passe son tour, etc.).
+            session = gs.get(lobby["code"])
+            if session and uid in session["user_ids"]:
+                session["runner"].disconnect(str(uid))
 
 
 def _grace_timeout(uid: int, code: str) -> None:
@@ -221,6 +230,8 @@ def _grace_timeout(uid: int, code: str) -> None:
     remaining = lb.leave(uid)
     if remaining:
         broadcast_lobby(remaining)
+    else:
+        gs.end(code)
 
 
 # ======================================================== friendlist (WS)
@@ -300,9 +311,15 @@ def broadcast_lobby(lobby: dict) -> None:
 
 def _leave_current_lobby(uid: int) -> None:
     """Sort `uid` de son lobby actuel (s'il en a un) et prévient les restants."""
+    lobby = lb.get(uid)
+    if not lobby:
+        return
+    code = lobby["code"]
     remaining = lb.leave(uid)
     if remaining:
         broadcast_lobby(remaining)
+    else:
+        gs.end(code)  # lobby mort → la partie avec
 
 
 @socketio.on("lobby_state")
@@ -402,6 +419,105 @@ def ws_lobby_chat(data):
         return {"error": "Tu n'es pas dans un lobby."}
     for uid in lobby["members"]:
         emit_to_user("lobby_chat", message, uid)
+    return {"ok": True}
+
+
+# ============================================================= jeux (WS)
+# Le GameRunner (core/) pilote la partie ; ses deux callbacks deviennent
+# ici des messages socket. public_view filtre l'info côté serveur : chaque
+# joueur ne reçoit QUE sa vue. L'état complet ne voyage jamais.
+
+
+def _game_callbacks(lobby_code: str):
+    """Fabrique les callbacks on_event/on_sync du runner pour ce lobby."""
+
+    def on_event(event):
+        session = gs.get(lobby_code)
+        if not session:
+            return
+        payload = {"type": event.type, "payload": event.payload}
+        if event.to == "all":
+            for uid in session["user_ids"]:
+                emit_to_user("game_event", payload, uid)
+        else:
+            emit_to_user("game_event", payload, int(event.to))
+
+    def on_sync(player_id, view):
+        emit_to_user("game_view", {"view": view}, int(player_id))
+
+    return on_event, on_sync
+
+
+@socketio.on("game_list")
+def ws_game_list(_data=None):
+    return {"games": gs.list_games()}
+
+
+@socketio.on("game_start")
+def ws_game_start(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    if not lobby:
+        return {"error": "Tu n'es pas dans un lobby."}
+    if lobby["host_id"] != me["id"]:
+        return {"error": "Seul le host lance une partie."}
+    game_id = str((data or {}).get("game_id", ""))
+    config = (data or {}).get("config") or {}
+    on_event, on_sync = _game_callbacks(lobby["code"])
+    error = gs.start(lobby, game_id, config, on_event, on_sync)
+    if error:
+        return error
+    return {"ok": True}
+
+
+@socketio.on("game_action")
+def ws_game_action(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    session = gs.get(lobby["code"]) if lobby else None
+    if not session or me["id"] not in session["user_ids"]:
+        return {"error": "Pas de partie en cours."}
+    action = (data or {}).get("action") or {}
+    # open_vote est réservé au host du lobby.
+    if action.get("type") == "open_vote" and lobby["host_id"] != me["id"]:
+        return {"error": "Seul le host peut ouvrir le vote."}
+    session["runner"].action(str(me["id"]), action)
+    return {"ok": True}
+
+
+@socketio.on("game_state")
+def ws_game_state(_data=None):
+    """Resync : la vue actuelle du joueur, ou null si pas de partie."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    if not lobby:
+        return {"view": None}
+    return {"view": gs.view_for(lobby["code"], me["id"])}
+
+
+@socketio.on("game_end")
+def ws_game_end(_data=None):
+    """Retour au lobby (host uniquement, une fois la partie finie ou pour abandonner)."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    if not lobby:
+        return {"error": "Tu n'es pas dans un lobby."}
+    if lobby["host_id"] != me["id"]:
+        return {"error": "Seul le host peut clore la partie."}
+    session = gs.get(lobby["code"])
+    if not session:
+        return {"error": "Pas de partie en cours."}
+    gs.end(lobby["code"])
+    for uid in session["user_ids"]:
+        emit_to_user("game_ended", {}, uid)
     return {"ok": True}
 
 

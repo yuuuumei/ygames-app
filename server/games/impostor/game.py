@@ -104,6 +104,7 @@ class ImpostorGame(Game):
         if self.phase == "clues":
             view["current_turn"] = self.players[
                 self.turn_order[self.turn_idx]].name
+            view["current_turn_id"] = self.turn_order[self.turn_idx]
         if self.phase == "over":
             # révélation générale — seulement une fois la partie finie
             view["reveal"] = {

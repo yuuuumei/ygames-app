@@ -13,6 +13,7 @@ invitations de lobby, et dit bonjour dans le chat en arrivant.
 Ctrl+C pour le déconnecter.
 """
 
+import random
 import sys
 import secrets
 import time
@@ -22,6 +23,8 @@ sys.path.insert(0, ".")  # pour importer db.py depuis server/
 import socketio  # python-socketio (client)
 
 import db
+
+CLUE_WORDS = ["truc", "machin", "vibe", "genre", "style", "concept", "délire"]
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -34,6 +37,10 @@ def main() -> None:
     add_target = args[args.index("--add") + 1] if "--add" in args else None
     join_code = args[args.index("--join") + 1] if "--join" in args else None
     create_lobby = "--create" in args
+    # --start impostor 3 : lance L'Imposteur dès que 3 joueurs sont là (host)
+    start_game = args[args.index("--start") + 1] if "--start" in args else None
+    start_when = int(args[args.index("--start") + 2]) if "--start" in args else 3
+    game_started = {"done": False}
 
     fake_discord_user = {
         "id": f"fake-{name.lower()}",
@@ -103,6 +110,55 @@ def main() -> None:
             for m in data["lobby"]["members"]
         )
         print(f"🏠 lobby {data['lobby']['code']} : {members}")
+        # Host bot : lance le jeu quand il y a assez de monde.
+        if (start_game and not game_started["done"]
+                and len(data["lobby"]["members"]) >= start_when):
+            game_started["done"] = True
+            def on_start(resp):
+                print(f"🎲 lancement de {start_game} : {resp.get('error', 'OK !')}")
+            print(f"🎲 {start_when} joueurs présents → je lance {start_game}")
+            sio.emit("game_start", {"game_id": start_game, "config": {}},
+                     callback=on_start)
+
+    # ------- le bot joue ! -------
+    my_pid = {"v": None}
+
+    @sio.on("game_view")
+    def on_game_view(data):
+        view = data["view"]
+        pid = my_pid["v"] = str(user["id"])
+        phase = view["phase"]
+
+        if phase == "clues":
+            me_in_game = next(p for p in view["players"] if p["id"] == pid)
+            if view.get("current_turn_id") == pid and not me_in_game["has_clue"]:
+                clue = random.choice(CLUE_WORDS)
+                print(f"💡 mon mot est « {view['your_word']} », mon tour → indice : {clue}")
+                sio.emit("game_action", {"action": {"type": "clue", "text": clue}})
+            # Host : tout le monde a parlé → ouvre le vote.
+            elif start_game and all(p["has_clue"] or not p["connected"]
+                                    for p in view["players"]):
+                print("🗳️ tous les indices sont là → j'ouvre le vote")
+                sio.emit("game_action", {"action": {"type": "open_vote"}})
+
+        elif phase == "vote":
+            me_in_game = next(p for p in view["players"] if p["id"] == pid)
+            if not me_in_game["has_voted"]:
+                target = random.choice(
+                    [p for p in view["players"] if p["id"] != pid])
+                print(f"🗳️ je vote contre {target['name']}")
+                sio.emit("game_action",
+                         {"action": {"type": "vote", "target": target["id"]}})
+
+        elif phase == "over" and view.get("reveal"):
+            r = view["reveal"]
+            print(f"🏁 fini ! imposteur(s) : {', '.join(r['impostors'])} | "
+                  f"mots : {r['word_main']} vs {r['word_impostor']} | "
+                  f"gagnants : {', '.join(r['winners'])}")
+
+    @sio.on("game_ended")
+    def on_game_ended(_=None):
+        print("↩️ retour au lobby")
 
     @sio.on("lobby_chat")
     def on_chat(msg):

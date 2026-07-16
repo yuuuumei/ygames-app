@@ -30,6 +30,44 @@ export type LobbyInvite = {
   from: Friend;
 };
 
+export type GamePlayer = {
+  id: string;
+  name: string;
+  avatar: string;
+  connected: boolean;
+  has_clue: boolean;
+  has_voted: boolean;
+};
+
+export type GameView = {
+  phase: "clues" | "vote" | "over";
+  category: string;
+  your_word: string | null;
+  players: GamePlayer[];
+  clues: Record<string, string>;
+  current_turn?: string;
+  current_turn_id?: string;
+  reveal?: {
+    impostors: string[];
+    word_main: string;
+    word_impostor: string;
+    votes: Record<string, string>;
+    winners: string[];
+  };
+};
+
+export type GameMeta = {
+  id: string;
+  name: string;
+  icon: string;
+  min_players: number;
+  max_players: number;
+  description: string;
+};
+
+/** Les jeux qui ont déjà leur écran côté client. */
+export const PLAYABLE_GAMES = new Set(["impostor"]);
+
 type SocialState = {
   friends: Friend[];
   incoming: Friend[];
@@ -50,6 +88,8 @@ export function useSocial(loggedIn: boolean) {
   // d'y téléporter l'utilisateur (écran "Se reconnecter").
   const [pendingLobby, setPendingLobby] = useState<Lobby | null>(null);
   const [invites, setInvites] = useState<LobbyInvite[]>([]);
+  const [gameView, setGameView] = useState<GameView | null>(null);
+  const [games, setGames] = useState<GameMeta[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const lobbyRef = useRef<Lobby | null>(null);
   const pendingRef = useRef<Lobby | null>(null);
@@ -121,6 +161,21 @@ export function useSocial(loggedIn: boolean) {
       socket.on("lobby_kicked", () => {
         setLobby(null);
         setPendingLobby(null);
+        setGameView(null);
+      });
+
+      // ------- jeux -------
+      socket.on("game_view", (data: { view: GameView }) => {
+        setGameView(data.view);
+      });
+      socket.on("game_ended", () => setGameView(null));
+
+      socket.emit("game_list", (resp: { games: GameMeta[] }) => {
+        if (resp?.games) setGames(resp.games);
+      });
+      // Une partie en cours ? (reconnexion en plein jeu)
+      socket.emit("game_state", (resp: { view: GameView | null }) => {
+        setGameView(resp?.view ?? null);
       });
 
       // Un ami se connecte / se déconnecte.
@@ -218,5 +273,16 @@ export function useSocial(loggedIn: boolean) {
     inviteToLobby: (userId: number) => act("lobby_invite", { user_id: userId }),
     kickFromLobby: (userId: number) => act("lobby_kick", { user_id: userId }),
     sendChat: (text: string) => act("lobby_chat", { text }),
+
+    gameView,
+    games,
+    startGame: (gameId: string) =>
+      act("game_start", { game_id: gameId, config: {} }),
+    gameAction: (action: object) => act("game_action", { action }),
+    endGame: async () => {
+      const err = await act("game_end", {});
+      if (!err) setGameView(null);
+      return err;
+    },
   };
 }

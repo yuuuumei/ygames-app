@@ -481,6 +481,314 @@
   text-align: center;
 }
 
+/* ------- launcher (accueil) ------- */
+
+.launcher {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  max-width: 68rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.launcher-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+
+.launcher-header .ghost-btn {
+  margin-top: 0;
+}
+
+.launcher-me {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.launcher-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.brand-small {
+  font-size: 1.5rem;
+}
+
+.launcher-body {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.launcher-main {
+  flex: 1;
+  text-align: left;
+}
+
+.launcher-main .online-title {
+  margin-bottom: 0.9rem;
+}
+
+.launcher-side {
+  width: 21rem;
+  flex-shrink: 0;
+}
+
+.launcher-side .online-panel {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.launcher-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.game-card-lg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem 2rem;
+  min-width: 11rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 14px;
+  color: #e8e6f0;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.game-card-lg:hover:not(:disabled) {
+  border-color: #5865f2;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(88, 101, 242, 0.15);
+}
+
+.game-card-lg:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.game-card-lg.game-picked {
+  border-color: #eb459e;
+}
+
+.game-icon-lg {
+  font-size: 2.6rem;
+}
+
+.game-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.launcher-hint {
+  margin-top: 1rem;
+}
+
+.join-code {
+  margin-top: 1.25rem;
+  max-width: 20rem;
+}
+
+.lobby-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-height: 0;
+  text-align: left;
+}
+
+.lobby-main .launcher-grid {
+  justify-content: flex-start;
+}
+
+.lobby-main .lobby-chat {
+  flex: 1;
+  min-height: 10rem;
+}
+
+.lobby-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ------- écran de jeu ------- */
+
+.game {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 2rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.game-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  align-self: stretch;
+}
+
+.game-badge {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.word-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.25rem 3rem;
+  background: rgba(88, 101, 242, 0.08);
+  border: 1px solid #5865f255;
+  border-radius: 14px;
+}
+
+.word-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9b97ad;
+}
+
+.word-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.gp-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.gp-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 1rem;
+  min-width: 6.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  color: #e8e6f0;
+  font-family: inherit;
+  cursor: default;
+}
+
+.gp-card.gp-turn {
+  border-color: #eb459e;
+  box-shadow: 0 0 12px rgba(235, 69, 158, 0.25);
+}
+
+.gp-card.gp-votable {
+  cursor: pointer;
+}
+
+.gp-card.gp-votable:hover {
+  border-color: #ed4245;
+  transform: translateY(-2px);
+}
+
+.gp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.gp-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.gp-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.gp-status {
+  font-size: 0.8rem;
+  min-height: 1.1em;
+}
+
+.clues {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  min-width: 24rem;
+  text-align: left;
+}
+
+.game-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.clue-form {
+  min-width: 24rem;
+}
+
+.vote-open-btn.subtle {
+  opacity: 0.55;
+}
+
+.reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.5rem 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 14px;
+}
+
+.reveal-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.reveal-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+
 .pending-code {
   font-size: 2.5rem;
   font-weight: 800;
