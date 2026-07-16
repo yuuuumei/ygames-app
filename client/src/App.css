@@ -160,6 +160,77 @@
   color: #55516a;
 }
 
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 0.45rem;
+  vertical-align: 1px;
+}
+
+.dot-on {
+  background: #57f287;
+}
+
+.dot-off {
+  background: #ed4245;
+}
+
+.online-panel {
+  margin-top: 2rem;
+  min-width: 20rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.online-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9b97ad;
+  margin-bottom: 0.75rem;
+}
+
+.online-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.online-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.online-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.online-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.online-name {
+  flex: 1;
+  font-size: 0.95rem;
+}
+
 .update-banner {
   position: fixed;
   bottom: 0;

@@ -9,6 +9,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             auth::login_discord,
             auth::get_session,
+            auth::get_session_token,
             auth::logout
         ])
         .run(tauri::generate_context!())

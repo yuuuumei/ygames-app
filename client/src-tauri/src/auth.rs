@@ -254,6 +254,12 @@ pub async fn get_session() -> Result<Option<User>, String> {
     Ok(Some(me.user))
 }
 
+/// Donne le token de session au front (pour authentifier le WebSocket).
+#[tauri::command]
+pub fn get_session_token() -> Option<String> {
+    read_token()
+}
+
 /// Déconnexion : invalide la session côté serveur puis nettoie le keychain.
 #[tauri::command]
 pub async fn logout() -> Result<(), String> {

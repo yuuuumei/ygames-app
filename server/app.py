@@ -1,14 +1,12 @@
-"""Serveur yGAMES — Phase 1 : authentification Discord.
+"""Serveur yGAMES — Phase 1 : auth Discord · Phase 2 : présence temps réel.
 
-Flow :
-1. Le client Tauri obtient un `code` OAuth via le navigateur (loopback).
-2. Il POST ce code ici (/auth/discord).
-3. NOUS (et personne d'autre) l'échangeons contre un access token Discord,
-   grâce au client_secret qui ne vit que dans le .env de ce serveur.
-4. On récupère l'identité (/users/@me), on upsert le user en SQLite,
-   et on renvoie un token de session MAISON au client.
-5. Ensuite le client ne parle plus jamais à Discord : il présente son
-   token maison (header Authorization: Bearer ...).
+HTTP (Flask)        : /auth/* — login, session, logout (voir plus bas).
+WebSocket (SocketIO): connexion permanente de chaque client connecté.
+    Le client s'authentifie à la connexion avec son token de session
+    (auth: {token}). Le serveur tient le registre de qui est en ligne
+    et le diffuse à tout le monde :
+      → "presence_snapshot" {users: [...]}     à l'arrivant
+      → "presence" {user, online: true|false}  à tous, à chaque changement
 """
 
 import os
@@ -17,6 +15,7 @@ import secrets
 import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from flask_socketio import SocketIO
 
 load_dotenv()  # charge server/.env
 
@@ -28,6 +27,9 @@ CLIENT_SECRET = os.environ["DISCORD_CLIENT_SECRET"]
 
 app = Flask(__name__)
 db.init_db()
+
+# cors "*" : le client est une app Tauri (origine tauri://), pas un site web.
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 def public_user(user: dict) -> dict:
@@ -52,6 +54,9 @@ def user_from_request() -> dict | None:
     if not auth.startswith("Bearer "):
         return None
     return db.get_user_by_token(auth.removeprefix("Bearer "))
+
+
+# ================================================================ HTTP auth
 
 
 @app.get("/health")
@@ -120,5 +125,55 @@ def auth_logout():
     return jsonify({"ok": True})
 
 
+# ========================================================= présence (WS)
+
+# user_id -> {"user": public_user, "sids": {sid, ...}}
+# Un même compte peut avoir plusieurs connexions (2 PC, dev + installé...) :
+# il n'est "hors ligne" que quand sa DERNIÈRE connexion tombe.
+# 1 seul worker gunicorn (voir Procfile) → un dict en mémoire suffit.
+online: dict[int, dict] = {}
+
+# sid -> user_id, pour retrouver qui se déconnecte
+sid_index: dict[str, int] = {}
+
+
+@socketio.on("connect")
+def ws_connect(auth):
+    token = (auth or {}).get("token", "")
+    user = db.get_user_by_token(token)
+    if not user:
+        return False  # refuse la connexion : socket non authentifié
+
+    uid = user["id"]
+    sid_index[request.sid] = uid
+
+    first_connection = uid not in online
+    entry = online.setdefault(uid, {"user": public_user(user), "sids": set()})
+    entry["sids"].add(request.sid)
+
+    # Snapshot de qui est en ligne pour l'arrivant…
+    socketio.emit(
+        "presence_snapshot",
+        {"users": [e["user"] for e in online.values()]},
+        to=request.sid,
+    )
+    # …et annonce aux autres s'il vient réellement d'arriver.
+    if first_connection:
+        socketio.emit("presence", {"user": entry["user"], "online": True})
+
+
+@socketio.on("disconnect")
+def ws_disconnect(reason=None):
+    uid = sid_index.pop(request.sid, None)
+    if uid is None or uid not in online:
+        return
+    entry = online[uid]
+    entry["sids"].discard(request.sid)
+    if not entry["sids"]:  # dernière connexion de ce compte
+        del online[uid]
+        socketio.emit("presence", {"user": entry["user"], "online": False})
+
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8787, debug=True)
+    # Dev local uniquement (la prod passe par gunicorn, cf. Procfile).
+    socketio.run(app, host="127.0.0.1", port=8787, debug=True)
