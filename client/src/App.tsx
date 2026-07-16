@@ -4,6 +4,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import UpdateBanner from "./UpdateBanner";
 import { useSocial } from "./useSocial";
 import FriendsPanel from "./FriendsPanel";
+import LobbyScreen from "./LobbyScreen";
 import "./App.css";
 
 type User = {
@@ -88,17 +89,82 @@ function App() {
           )}
           {screen.error && <p className="error">{screen.error}</p>}
 
-          <p className="version">yGAMES v{version} — Phase 1</p>
+          <p className="version">yGAMES v{version} — Phase 2</p>
         </div>
       </main>
     );
   }
 
-  // ------- écran d'accueil connecté -------
+  // ------- connecté : reconnexion, lobby ou accueil -------
   const { user } = screen;
+
+  // Un lobby nous attend (retour dans l'app) : on propose, on n'impose pas.
+  if (social.pendingLobby && !social.lobby) {
+    const pending = social.pendingLobby;
+    return (
+      <main className="screen">
+        <UpdateBanner />
+        <div className="card">
+          <p className="muted">Une partie t'attend dans le lobby</p>
+          <p className="pending-code">{pending.code}</p>
+          <p className="muted small">
+            {pending.members.map((m) => m.display_name).join(", ")}
+          </p>
+          <button
+            className="discord-btn reconnect-btn"
+            onClick={() => social.joinLobby(pending.code)}
+          >
+            Se reconnecter
+          </button>
+          <button className="ghost-btn" onClick={social.leaveLobby}>
+            Quitter le lobby
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (social.lobby) {
+    return (
+      <main className="screen screen-top">
+        <UpdateBanner />
+        <LobbyScreen
+          lobby={social.lobby}
+          meId={user.id}
+          friends={social.friends}
+          onInvite={social.inviteToLobby}
+          onKick={social.kickFromLobby}
+          onLeave={social.leaveLobby}
+          onChat={social.sendChat}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="screen">
       <UpdateBanner />
+
+      {social.invites.map((inv) => (
+        <div key={inv.code} className="invite-banner">
+          <span>
+            🎮 <strong>{inv.from.display_name}</strong> t'invite dans son lobby
+          </span>
+          <button
+            className="add-btn"
+            onClick={() => social.joinLobby(inv.code)}
+          >
+            Rejoindre
+          </button>
+          <button
+            className="mini-btn no ghost"
+            onClick={() => social.dismissInvite(inv.code)}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+
       <div className="card">
         {user.avatar_url ? (
           <img className="avatar" src={user.avatar_url} alt="" />
@@ -115,6 +181,11 @@ function App() {
           {social.connected ? "Connecté au serveur" : "Reconnexion…"}
         </p>
 
+        <LobbyControls
+          onCreate={social.createLobby}
+          onJoin={social.joinLobby}
+        />
+
         <FriendsPanel
           friends={social.friends}
           incoming={social.incoming}
@@ -129,9 +200,49 @@ function App() {
           Se déconnecter
         </button>
 
-        <p className="version">yGAMES v{version} — Phase 1</p>
+        <p className="version">yGAMES v{version} — Phase 2</p>
       </div>
     </main>
+  );
+}
+
+/** Créer un lobby, ou en rejoindre un par code. */
+function LobbyControls(props: {
+  onCreate: () => Promise<string | null>;
+  onJoin: (code: string) => Promise<string | null>;
+}) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function join(e: React.FormEvent) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setError(await props.onJoin(code.trim()));
+  }
+
+  return (
+    <div className="lobby-controls">
+      <button
+        className="discord-btn create-lobby-btn"
+        onClick={async () => setError(await props.onCreate())}
+      >
+        Créer un lobby
+      </button>
+      <form className="add-friend" onSubmit={join}>
+        <input
+          className="add-input code-input"
+          value={code}
+          onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
+          placeholder="CODE"
+          maxLength={4}
+          spellCheck={false}
+        />
+        <button className="add-btn" disabled={code.trim().length < 4}>
+          Rejoindre
+        </button>
+      </form>
+      {error && <p className="error small">{error}</p>}
+    </div>
   );
 }
 

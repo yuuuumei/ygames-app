@@ -20,6 +20,7 @@ from flask_socketio import SocketIO
 load_dotenv()  # charge server/.env
 
 import db  # noqa: E402  (après load_dotenv pour que DATABASE_PATH soit lu)
+import lobbies as lb  # noqa: E402
 
 DISCORD_API = "https://discord.com/api/v10"
 CLIENT_ID = os.environ["DISCORD_CLIENT_ID"]
@@ -181,10 +182,14 @@ def ws_connect(auth):
     entry = online.setdefault(uid, {"user": public_user(user), "sids": set()})
     entry["sids"].add(request.sid)
 
-    # Annonce l'arrivée aux AMIS en ligne uniquement.
     if first_connection:
+        # Annonce l'arrivée aux AMIS en ligne uniquement.
         for fid in db.get_friend_ids(uid):
             emit_to_user("presence", {"user": entry["user"], "online": True}, fid)
+        # De retour dans son lobby après une coupure ? On le re-marque présent.
+        lobby = lb.set_connected(uid, True)
+        if lobby:
+            broadcast_lobby(lobby)
 
 
 @socketio.on("disconnect")
@@ -198,6 +203,24 @@ def ws_disconnect(reason=None):
         del online[uid]
         for fid in db.get_friend_ids(uid):
             emit_to_user("presence", {"user": entry["user"], "online": False}, fid)
+        # S'il était dans un lobby : marqué déconnecté + délai de grâce.
+        lobby = lb.set_connected(uid, False)
+        if lobby:
+            broadcast_lobby(lobby)
+            socketio.start_background_task(_grace_timeout, uid, lobby["code"])
+
+
+def _grace_timeout(uid: int, code: str) -> None:
+    """Si l'utilisateur n'est pas revenu après le délai de grâce, il sort."""
+    socketio.sleep(lb.GRACE_SECONDS)
+    if uid in online:  # revenu entre-temps
+        return
+    lobby = lb.lobbies.get(code)
+    if not lobby or uid not in lobby["members"]:
+        return
+    remaining = lb.leave(uid)
+    if remaining:
+        broadcast_lobby(remaining)
 
 
 # ======================================================== friendlist (WS)
@@ -207,7 +230,7 @@ def ws_disconnect(reason=None):
 
 
 @socketio.on("friends")
-def ws_friends():
+def ws_friends(_data=None):
     me = current_user()
     if not me:
         return {"error": "non authentifié"}
@@ -262,6 +285,123 @@ def ws_friend_remove(data):
     if not db.remove_friend(me["id"], other_id):
         return {"error": "Ami introuvable."}
     emit_to_user("friends_changed", {}, other_id)
+    return {"ok": True}
+
+
+# ============================================================ lobby (WS)
+
+
+def broadcast_lobby(lobby: dict) -> None:
+    """Pousse l'état du lobby à tous ses membres (toutes leurs connexions)."""
+    data = {"lobby": lb.serialize(lobby)}
+    for uid in lobby["members"]:
+        emit_to_user("lobby_update", data, uid)
+
+
+def _leave_current_lobby(uid: int) -> None:
+    """Sort `uid` de son lobby actuel (s'il en a un) et prévient les restants."""
+    remaining = lb.leave(uid)
+    if remaining:
+        broadcast_lobby(remaining)
+
+
+@socketio.on("lobby_state")
+def ws_lobby_state(_data=None):
+    """Re-synchronisation (après reconnexion, au montage de l'écran...)."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    return {"lobby": lb.serialize(lobby) if lobby else None}
+
+
+@socketio.on("lobby_create")
+def ws_lobby_create(_data=None):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    _leave_current_lobby(me["id"])
+    lobby = lb.create(me)
+    return {"lobby": lb.serialize(lobby)}
+
+
+@socketio.on("lobby_join")
+def ws_lobby_join(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    code = str((data or {}).get("code", ""))
+    current = lb.get(me["id"])
+    if current and current["code"] != code.strip().upper():
+        _leave_current_lobby(me["id"])
+    lobby, error = lb.join(me, code)
+    if error:
+        return {"error": error}
+    broadcast_lobby(lobby)
+    return {"lobby": lb.serialize(lobby)}
+
+
+@socketio.on("lobby_leave")
+def ws_lobby_leave(_data=None):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    _leave_current_lobby(me["id"])
+    return {"ok": True}
+
+
+@socketio.on("lobby_invite")
+def ws_lobby_invite(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    if not lobby:
+        return {"error": "Tu n'es pas dans un lobby."}
+    target_id = int((data or {}).get("user_id", 0))
+    if target_id not in db.get_friend_ids(me["id"]):
+        return {"error": "Tu ne peux inviter que tes amis."}
+    if target_id not in online:
+        return {"error": "Cet ami n'est pas en ligne."}
+    emit_to_user(
+        "lobby_invited",
+        {"code": lobby["code"], "from": online[me["id"]]["user"]},
+        target_id,
+    )
+    return {"ok": True}
+
+
+@socketio.on("lobby_kick")
+def ws_lobby_kick(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    if not lobby or lobby["host_id"] != me["id"]:
+        return {"error": "Seul le host peut exclure."}
+    target_id = int((data or {}).get("user_id", 0))
+    if target_id == me["id"] or target_id not in lobby["members"]:
+        return {"error": "Membre introuvable."}
+    remaining = lb.leave(target_id)
+    emit_to_user("lobby_kicked", {}, target_id)
+    if remaining:
+        broadcast_lobby(remaining)
+    return {"ok": True}
+
+
+@socketio.on("lobby_chat")
+def ws_lobby_chat(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    text = str((data or {}).get("text", "")).strip()
+    if not text:
+        return {"error": "Message vide."}
+    lobby, message = lb.add_chat(me["id"], text)
+    if not lobby:
+        return {"error": "Tu n'es pas dans un lobby."}
+    for uid in lobby["members"]:
+        emit_to_user("lobby_chat", message, uid)
     return {"ok": True}
 
 

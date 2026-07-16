@@ -6,8 +6,10 @@ l'app Tauri.
 
 Usage (depuis server/) :
     python tools/fake_player.py Alice
-    python tools/fake_player.py Alice --add itsyuumei   # envoie une demande d'ami
-Le faux joueur ACCEPTE automatiquement toute demande d'ami reçue.
+    python tools/fake_player.py Alice --add itsyuumei   # demande d'ami
+    python tools/fake_player.py Alice --join 4F2K       # rejoint un lobby
+Le faux joueur ACCEPTE automatiquement les demandes d'ami ET les
+invitations de lobby, et dit bonjour dans le chat en arrivant.
 Ctrl+C pour le déconnecter.
 """
 
@@ -30,6 +32,8 @@ def main() -> None:
     args = sys.argv[1:]
     name = args[0] if args else "TestBot"
     add_target = args[args.index("--add") + 1] if "--add" in args else None
+    join_code = args[args.index("--join") + 1] if "--join" in args else None
+    create_lobby = "--create" in args
 
     fake_discord_user = {
         "id": f"fake-{name.lower()}",
@@ -56,6 +60,18 @@ def main() -> None:
             print(f"🤝 demande de {u['display_name']} → j'accepte")
             sio.emit("friend_accept", {"user_id": u["id"]})
 
+    def join_lobby(code):
+        def on_join(resp):
+            if resp.get("error"):
+                print(f"🚪 impossible de rejoindre {code} : {resp['error']}")
+            else:
+                members = ", ".join(
+                    m["display_name"] for m in resp["lobby"]["members"]
+                )
+                print(f"🚪 dans le lobby {resp['lobby']['code']} avec : {members}")
+                sio.emit("lobby_chat", {"text": f"Salut, c'est {name} ! 🤖"})
+        sio.emit("lobby_join", {"code": code}, callback=on_join)
+
     @sio.event
     def connect():
         print(f"🟢 {name} connecté")
@@ -66,7 +82,35 @@ def main() -> None:
                 )
                 print(f"📨 demande d'ami vers {add_target} : {msg}")
             sio.emit("friend_request", {"username": add_target}, callback=on_add)
+        if join_code:
+            join_lobby(join_code)
+        if create_lobby:
+            def on_create(resp):
+                print(f"🏗️ lobby créé : CODE={resp['lobby']['code']}")
+            # {} explicite : c'est ce que l'UI envoie (même chemin de code).
+            sio.emit("lobby_create", {}, callback=on_create)
         sio.emit("friends", callback=show_friends)
+
+    @sio.on("lobby_invited")
+    def on_invited(data):
+        print(f"💌 {data['from']['display_name']} m'invite dans {data['code']} → j'y vais")
+        join_lobby(data["code"])
+
+    @sio.on("lobby_update")
+    def on_lobby_update(data):
+        members = ", ".join(
+            f"{m['display_name']}{'👑' if m['id'] == data['lobby']['host_id'] else ''}{'' if m['connected'] else '💤'}"
+            for m in data["lobby"]["members"]
+        )
+        print(f"🏠 lobby {data['lobby']['code']} : {members}")
+
+    @sio.on("lobby_chat")
+    def on_chat(msg):
+        print(f"💬 {msg['from']['display_name']} : {msg['text']}")
+
+    @sio.on("lobby_kicked")
+    def on_kicked(_=None):
+        print("👢 je me suis fait exclure du lobby !")
 
     @sio.on("friends_changed")
     def on_friends_changed(_=None):

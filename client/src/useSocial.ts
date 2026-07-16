@@ -12,6 +12,24 @@ export type Friend = {
   online?: boolean;
 };
 
+export type ChatMessage = {
+  from: Friend;
+  text: string;
+  ts: number;
+};
+
+export type Lobby = {
+  code: string;
+  host_id: number;
+  members: (Friend & { connected: boolean })[];
+  chat: ChatMessage[];
+};
+
+export type LobbyInvite = {
+  code: string;
+  from: Friend;
+};
+
 type SocialState = {
   friends: Friend[];
   incoming: Friend[];
@@ -27,7 +45,16 @@ const EMPTY: SocialState = { friends: [], incoming: [], outgoing: [] };
 export function useSocial(loggedIn: boolean) {
   const [connected, setConnected] = useState(false);
   const [social, setSocial] = useState<SocialState>(EMPTY);
+  const [lobby, setLobby] = useState<Lobby | null>(null);
+  // Lobby retrouvé au (re)démarrage : on PROPOSE d'y retourner au lieu
+  // d'y téléporter l'utilisateur (écran "Se reconnecter").
+  const [pendingLobby, setPendingLobby] = useState<Lobby | null>(null);
+  const [invites, setInvites] = useState<LobbyInvite[]>([]);
   const socketRef = useRef<Socket | null>(null);
+  const lobbyRef = useRef<Lobby | null>(null);
+  const pendingRef = useRef<Lobby | null>(null);
+  lobbyRef.current = lobby;
+  pendingRef.current = pendingLobby;
 
   const refresh = useCallback(() => {
     socketRef.current?.emit("friends", (resp: SocialState & { error?: string }) => {
@@ -53,8 +80,48 @@ export function useSocial(loggedIn: boolean) {
       socket.on("connect", () => {
         setConnected(true);
         refresh(); // friendlist fraîche à chaque (re)connexion
+        // Re-synchronise le lobby (on y est peut-être encore, délai de grâce).
+        socket.emit("lobby_state", (resp: { lobby: Lobby | null }) => {
+          const found = resp?.lobby ?? null;
+          if (!found) {
+            setLobby(null);
+            setPendingLobby(null);
+          } else if (lobbyRef.current) {
+            // On était DÉJÀ sur l'écran lobby (micro-coupure) : resync silencieuse.
+            setLobby(found);
+          } else {
+            // Retour dans l'app : on propose la reconnexion, sans forcer.
+            setPendingLobby(found);
+          }
+        });
       });
       socket.on("disconnect", () => setConnected(false));
+
+      // ------- lobby -------
+      socket.on("lobby_update", (data: { lobby: Lobby }) => {
+        // Tant que la reconnexion n'est pas choisie, on met à jour la
+        // proposition, pas l'écran.
+        if (pendingRef.current) {
+          setPendingLobby(data.lobby);
+        } else {
+          setLobby(data.lobby);
+        }
+      });
+      socket.on("lobby_chat", (msg: ChatMessage) => {
+        setLobby((prev) =>
+          prev ? { ...prev, chat: [...prev.chat, msg] } : prev,
+        );
+      });
+      socket.on("lobby_invited", (inv: LobbyInvite) => {
+        setInvites((prev) => [
+          ...prev.filter((i) => i.code !== inv.code),
+          inv,
+        ]);
+      });
+      socket.on("lobby_kicked", () => {
+        setLobby(null);
+        setPendingLobby(null);
+      });
 
       // Un ami se connecte / se déconnecte.
       socket.on("presence", (data: { user: Friend; online: boolean }) => {
@@ -100,6 +167,27 @@ export function useSocial(loggedIn: boolean) {
     [refresh],
   );
 
+  /** Émet un événement dont l'ack contient {lobby} et met l'état à jour. */
+  const lobbyAct = useCallback(
+    (event: string, data: object = {}) =>
+      new Promise<string | null>((resolve) => {
+        const socket = socketRef.current;
+        if (!socket?.connected) {
+          resolve("Pas de connexion au serveur.");
+          return;
+        }
+        socket.emit(event, data, (resp: { lobby?: Lobby; error?: string }) => {
+          if (resp?.error) {
+            resolve(resp.error);
+          } else {
+            if (resp?.lobby !== undefined) setLobby(resp.lobby);
+            resolve(null);
+          }
+        });
+      }),
+    [],
+  );
+
   return {
     connected,
     ...social,
@@ -107,5 +195,28 @@ export function useSocial(loggedIn: boolean) {
     acceptFriend: (userId: number) => act("friend_accept", { user_id: userId }),
     declineFriend: (userId: number) => act("friend_decline", { user_id: userId }),
     removeFriend: (userId: number) => act("friend_remove", { user_id: userId }),
+
+    lobby,
+    pendingLobby,
+    invites,
+    createLobby: () => lobbyAct("lobby_create"),
+    joinLobby: (code: string) => {
+      setInvites((prev) => prev.filter((i) => i.code !== code));
+      setPendingLobby(null);
+      return lobbyAct("lobby_join", { code });
+    },
+    leaveLobby: async () => {
+      const err = await act("lobby_leave", {});
+      if (!err) {
+        setLobby(null);
+        setPendingLobby(null);
+      }
+      return err;
+    },
+    dismissInvite: (code: string) =>
+      setInvites((prev) => prev.filter((i) => i.code !== code)),
+    inviteToLobby: (userId: number) => act("lobby_invite", { user_id: userId }),
+    kickFromLobby: (userId: number) => act("lobby_kick", { user_id: userId }),
+    sendChat: (text: string) => act("lobby_chat", { text }),
   };
 }
