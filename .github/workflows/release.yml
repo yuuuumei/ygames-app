@@ -1,0 +1,50 @@
+# Build et publication d'une release yGAMES.
+# Déclenché par un tag de version : git tag v0.1.0 && git push --tags
+# Produit : installeur Windows (NSIS) + artefacts updater signés + latest.json
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: client/src-tauri
+
+      - name: Install frontend deps
+        working-directory: client
+        run: npm ci
+
+      - name: Build + publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: client
+          tagName: ${{ github.ref_name }}
+          releaseName: "yGAMES ${{ github.ref_name }}"
+          releaseBody: "Installe le .exe, les mises à jour suivantes seront automatiques."
+          releaseDraft: false
+          prerelease: false

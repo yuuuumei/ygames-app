@@ -1,0 +1,16 @@
+# Secrets — ne JAMAIS commiter
+.env
+server/.env
+
+# Python
+__pycache__/
+*.pyc
+server/.venv/
+server/*.db
+server/*.db-wal
+server/*.db-shm
+
+# Node / Tauri
+client/node_modules/
+client/dist/
+client/src-tauri/target/

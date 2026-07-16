@@ -1,0 +1,203 @@
+:root {
+  font-family: Inter, "Segoe UI", Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: #e8e6f0;
+  background-color: #14121c;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 0%, rgba(88, 101, 242, 0.18), transparent),
+    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(235, 69, 158, 0.10), transparent),
+    #14121c;
+  user-select: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 4rem;
+  text-align: center;
+}
+
+.brand {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.brand-accent {
+  background: linear-gradient(90deg, #5865f2, #eb459e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline {
+  color: #9b97ad;
+  margin-bottom: 2rem;
+}
+
+.discord-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.8rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.discord-btn:hover:not(:disabled) {
+  background-color: #4752c4;
+}
+
+.discord-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.discord-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.discord-icon {
+  width: 1.4em;
+  height: 1.4em;
+}
+
+.ghost-btn {
+  margin-top: 1.5rem;
+  padding: 0.55rem 1.3rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #9b97ad;
+  background: transparent;
+  border: 1px solid #3a3650;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.ghost-btn:hover {
+  color: #e8e6f0;
+  border-color: #9b97ad;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid #5865f2;
+  margin-bottom: 0.75rem;
+}
+
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.welcome {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.muted {
+  color: #9b97ad;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.next-up {
+  margin-top: 1.25rem;
+}
+
+.error {
+  margin-top: 1rem;
+  max-width: 28rem;
+  font-size: 0.9rem;
+  color: #ed4245;
+}
+
+.version {
+  margin-top: 3rem;
+  font-size: 0.75rem;
+  color: #55516a;
+}
+
+.update-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  background: #1e1b2e;
+  border-top: 1px solid #3a3650;
+  color: #e8e6f0;
+  z-index: 10;
+}
+
+.update-btn {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-btn:hover:not(:disabled) {
+  background-color: #4752c4;
+}
+
+.update-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.update-error {
+  color: #ed4245;
+}
