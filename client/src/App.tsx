@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import UpdateBanner from "./UpdateBanner";
 import "./App.css";
 
@@ -20,6 +21,11 @@ type Screen =
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
+  const [version, setVersion] = useState("");
+
+  useEffect(() => {
+    getVersion().then(setVersion).catch(() => {});
+  }, []);
 
   // Au démarrage : auto-login si un token valide dort dans le keychain.
   useEffect(() => {
@@ -79,7 +85,7 @@ function App() {
           )}
           {screen.error && <p className="error">{screen.error}</p>}
 
-          <p className="version">yGAMES v0.1.0 — Phase 1</p>
+          <p className="version">yGAMES v{version} — Phase 1</p>
         </div>
       </main>
     );
@@ -111,7 +117,7 @@ function App() {
           Se déconnecter
         </button>
 
-        <p className="version">yGAMES v0.1.0 — Phase 1</p>
+        <p className="version">yGAMES v{version} — Phase 1</p>
       </div>
     </main>
   );
