@@ -17,7 +17,12 @@ use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use tauri_plugin_opener::OpenerExt;
 
+/// En dev (`npm run tauri dev`) : le Flask local.
+#[cfg(debug_assertions)]
 const SERVER_URL: &str = "http://127.0.0.1:8787";
+/// En release (builds distribués aux potes) : le serveur Railway.
+#[cfg(not(debug_assertions))]
+const SERVER_URL: &str = "https://ygames-server-production.up.railway.app";
 const DISCORD_CLIENT_ID: &str = "1527351493899059331";
 /// Les 3 ports enregistrés comme redirect URIs sur le portail Discord.
 const LOOPBACK_PORTS: [u16; 3] = [53682, 53683, 53684];
