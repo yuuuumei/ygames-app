@@ -11,7 +11,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "PUBKEY_A_REMPLACER",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERGNzAxRTMxNjc1N0VGNTEKUldSUjcxZG5NUjV3MzBZbzNNbHIxQXZBVHE3UDFMTC9iUjVmQi9tMDd5R1lKeXFlcllYR3ZMeFoK",
       "endpoints": [
         "https://github.com/yuuuumei/ygames-app/releases/latest/download/latest.json"
       ]
