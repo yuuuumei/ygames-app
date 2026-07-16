@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import UpdateBanner from "./UpdateBanner";
-import { usePresence } from "./usePresence";
+import { useSocial } from "./useSocial";
+import FriendsPanel from "./FriendsPanel";
 import "./App.css";
 
 type User = {
@@ -23,7 +24,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState("");
-  const { connected, online } = usePresence(screen.kind === "home");
+  const social = useSocial(screen.kind === "home");
 
   useEffect(() => {
     getVersion().then(setVersion).catch(() => {});
@@ -110,36 +111,19 @@ function App() {
           Salut, <span className="brand-accent">{user.display_name}</span> !
         </h1>
         <p className="muted">
-          <span className={connected ? "dot dot-on" : "dot dot-off"} />
-          {connected ? "Connecté au serveur" : "Reconnexion…"}
+          <span className={social.connected ? "dot dot-on" : "dot dot-off"} />
+          {social.connected ? "Connecté au serveur" : "Reconnexion…"}
         </p>
 
-        <section className="online-panel">
-          <h2 className="online-title">En ligne — {online.length}</h2>
-          {online.length === 0 && (
-            <p className="muted small">Personne pour l'instant…</p>
-          )}
-          <ul className="online-list">
-            {online.map((p) => (
-              <li key={p.discord_id} className="online-item">
-                {p.avatar_url ? (
-                  <img className="online-avatar" src={p.avatar_url} alt="" />
-                ) : (
-                  <span className="online-avatar online-avatar-fallback">
-                    {p.display_name.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span className="online-name">
-                  {p.display_name}
-                  {p.discord_id === user.discord_id && (
-                    <span className="muted small"> (toi)</span>
-                  )}
-                </span>
-                <span className="dot dot-on" />
-              </li>
-            ))}
-          </ul>
-        </section>
+        <FriendsPanel
+          friends={social.friends}
+          incoming={social.incoming}
+          outgoing={social.outgoing}
+          onAdd={social.addFriend}
+          onAccept={social.acceptFriend}
+          onDecline={social.declineFriend}
+          onRemove={social.removeFriend}
+        />
 
         <button className="ghost-btn" onClick={handleLogout}>
           Se déconnecter

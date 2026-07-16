@@ -47,6 +47,18 @@ def init_db() -> None:
             created_at INTEGER NOT NULL,
             expires_at INTEGER NOT NULL
         );
+
+        -- Une ligne par relation. status: 'pending' (en attente de
+        -- l'accepté par addressee) ou 'accepted'. Jamais deux lignes
+        -- pour la même paire (on vérifie les deux sens à l'insertion).
+        CREATE TABLE IF NOT EXISTS friendships (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            requester_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            addressee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            status       TEXT NOT NULL DEFAULT 'pending',
+            created_at   INTEGER NOT NULL,
+            UNIQUE(requester_id, addressee_id)
+        );
         """
     )
     conn.commit()
@@ -120,3 +132,146 @@ def delete_session(token: str) -> None:
     conn.execute("DELETE FROM sessions WHERE token_hash = ?", (_hash_token(token),))
     conn.commit()
     conn.close()
+
+
+# ------------------------------------------------------------- friendships
+
+
+def send_friend_request(requester_id: int, username: str) -> dict:
+    """Envoie une demande d'ami vers `username`.
+
+    Renvoie {"ok": ..., "auto_accepted": bool} ou {"error": message}.
+    Cas particulier sympa : si l'autre m'avait déjà demandé, on accepte
+    directement sa demande au lieu d'en créer une croisée.
+    """
+    conn = get_db()
+    target = conn.execute(
+        "SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (username,)
+    ).fetchone()
+    if not target:
+        conn.close()
+        return {"error": "Aucun joueur avec ce pseudo (il doit avoir lancé yGAMES au moins une fois)."}
+    if target["id"] == requester_id:
+        conn.close()
+        return {"error": "On ne s'ajoute pas soi-même 🙂"}
+
+    existing = conn.execute(
+        """
+        SELECT * FROM friendships
+        WHERE (requester_id = ? AND addressee_id = ?)
+           OR (requester_id = ? AND addressee_id = ?)
+        """,
+        (requester_id, target["id"], target["id"], requester_id),
+    ).fetchone()
+
+    if existing:
+        if existing["status"] == "accepted":
+            conn.close()
+            return {"error": "Vous êtes déjà amis."}
+        if existing["requester_id"] == requester_id:
+            conn.close()
+            return {"error": "Demande déjà envoyée, patience !"}
+        # L'autre m'avait déjà demandé → on accepte sa demande.
+        conn.execute(
+            "UPDATE friendships SET status = 'accepted' WHERE id = ?",
+            (existing["id"],),
+        )
+        conn.commit()
+        conn.close()
+        return {"ok": True, "auto_accepted": True, "other_id": target["id"]}
+
+    conn.execute(
+        "INSERT INTO friendships (requester_id, addressee_id, status, created_at) VALUES (?, ?, 'pending', ?)",
+        (requester_id, target["id"], int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True, "auto_accepted": False, "other_id": target["id"]}
+
+
+def respond_friend_request(user_id: int, other_id: int, accept: bool) -> bool:
+    """Accepte ou refuse la demande de `other_id` vers `user_id`."""
+    conn = get_db()
+    if accept:
+        cur = conn.execute(
+            "UPDATE friendships SET status = 'accepted' WHERE requester_id = ? AND addressee_id = ? AND status = 'pending'",
+            (other_id, user_id),
+        )
+    else:
+        cur = conn.execute(
+            "DELETE FROM friendships WHERE requester_id = ? AND addressee_id = ? AND status = 'pending'",
+            (other_id, user_id),
+        )
+    conn.commit()
+    changed = cur.rowcount > 0
+    conn.close()
+    return changed
+
+
+def remove_friend(user_id: int, other_id: int) -> bool:
+    """Supprime une amitié acceptée (dans un sens ou l'autre)."""
+    conn = get_db()
+    cur = conn.execute(
+        """
+        DELETE FROM friendships
+        WHERE status = 'accepted'
+          AND ((requester_id = ? AND addressee_id = ?)
+            OR (requester_id = ? AND addressee_id = ?))
+        """,
+        (user_id, other_id, other_id, user_id),
+    )
+    conn.commit()
+    changed = cur.rowcount > 0
+    conn.close()
+    return changed
+
+
+def get_friend_ids(user_id: int) -> list[int]:
+    """Les ids des amis acceptés de user_id."""
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT CASE WHEN requester_id = ? THEN addressee_id ELSE requester_id END AS fid
+        FROM friendships
+        WHERE status = 'accepted' AND (requester_id = ? OR addressee_id = ?)
+        """,
+        (user_id, user_id, user_id),
+    ).fetchall()
+    conn.close()
+    return [r["fid"] for r in rows]
+
+
+def get_social(user_id: int) -> dict:
+    """Tout le social d'un user : amis, demandes reçues, demandes envoyées."""
+    conn = get_db()
+    friends = conn.execute(
+        """
+        SELECT u.* FROM users u
+        JOIN friendships f ON f.status = 'accepted'
+            AND ((f.requester_id = ? AND u.id = f.addressee_id)
+              OR (f.addressee_id = ? AND u.id = f.requester_id))
+        """,
+        (user_id, user_id),
+    ).fetchall()
+    incoming = conn.execute(
+        """
+        SELECT u.* FROM users u
+        JOIN friendships f ON f.status = 'pending'
+            AND f.addressee_id = ? AND u.id = f.requester_id
+        """,
+        (user_id,),
+    ).fetchall()
+    outgoing = conn.execute(
+        """
+        SELECT u.* FROM users u
+        JOIN friendships f ON f.status = 'pending'
+            AND f.requester_id = ? AND u.id = f.addressee_id
+        """,
+        (user_id,),
+    ).fetchall()
+    conn.close()
+    return {
+        "friends": [dict(r) for r in friends],
+        "incoming": [dict(r) for r in incoming],
+        "outgoing": [dict(r) for r in outgoing],
+    }

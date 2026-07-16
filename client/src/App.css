@@ -177,6 +177,99 @@
   background: #ed4245;
 }
 
+.dot-idle {
+  background: #55516a;
+}
+
+.add-friend {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.add-input {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #e8e6f0;
+  background: #14121c;
+  border: 1px solid #3a3650;
+  border-radius: 8px;
+  outline: none;
+}
+
+.add-input:focus {
+  border-color: #5865f2;
+}
+
+.add-btn {
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.requests {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2c2940;
+}
+
+.requests-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #eb459e;
+  margin-bottom: 0.6rem;
+}
+
+.mini-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.mini-btn.ok {
+  background: #248046;
+}
+
+.mini-btn.no {
+  background: #da373c;
+}
+
+.mini-btn.ghost {
+  background: transparent;
+  color: #55516a;
+}
+
+.mini-btn.ghost:hover {
+  background: #da373c;
+  color: #ffffff;
+}
+
+.outgoing-note {
+  margin-top: 0.75rem;
+}
+
 .online-panel {
   margin-top: 2rem;
   min-width: 20rem;

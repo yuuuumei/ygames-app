@@ -137,6 +137,36 @@ online: dict[int, dict] = {}
 sid_index: dict[str, int] = {}
 
 
+def emit_to_user(event: str, data, uid: int) -> None:
+    """Envoie un événement à TOUTES les connexions d'un user (s'il est en ligne)."""
+    entry = online.get(uid)
+    if entry:
+        for sid in entry["sids"]:
+            socketio.emit(event, data, to=sid)
+
+
+def current_user() -> dict | None:
+    """Le user derrière le socket courant (via le registre des sids)."""
+    uid = sid_index.get(request.sid)
+    if uid is None:
+        return None
+    entry = online.get(uid)
+    return {"id": uid, **entry["user"]} if entry else None
+
+
+def social_payload(uid: int) -> dict:
+    """La friendlist complète d'un user, avec l'état en ligne de chaque ami."""
+    social = db.get_social(uid)
+    return {
+        "friends": [
+            {**public_user(f), "online": f["id"] in online}
+            for f in social["friends"]
+        ],
+        "incoming": [public_user(u) for u in social["incoming"]],
+        "outgoing": [public_user(u) for u in social["outgoing"]],
+    }
+
+
 @socketio.on("connect")
 def ws_connect(auth):
     token = (auth or {}).get("token", "")
@@ -151,15 +181,10 @@ def ws_connect(auth):
     entry = online.setdefault(uid, {"user": public_user(user), "sids": set()})
     entry["sids"].add(request.sid)
 
-    # Snapshot de qui est en ligne pour l'arrivant…
-    socketio.emit(
-        "presence_snapshot",
-        {"users": [e["user"] for e in online.values()]},
-        to=request.sid,
-    )
-    # …et annonce aux autres s'il vient réellement d'arriver.
+    # Annonce l'arrivée aux AMIS en ligne uniquement.
     if first_connection:
-        socketio.emit("presence", {"user": entry["user"], "online": True})
+        for fid in db.get_friend_ids(uid):
+            emit_to_user("presence", {"user": entry["user"], "online": True}, fid)
 
 
 @socketio.on("disconnect")
@@ -171,7 +196,73 @@ def ws_disconnect(reason=None):
     entry["sids"].discard(request.sid)
     if not entry["sids"]:  # dernière connexion de ce compte
         del online[uid]
-        socketio.emit("presence", {"user": entry["user"], "online": False})
+        for fid in db.get_friend_ids(uid):
+            emit_to_user("presence", {"user": entry["user"], "online": False}, fid)
+
+
+# ======================================================== friendlist (WS)
+# Chaque handler renvoie un dict = ack socket.io, reçu par le callback client.
+# Après tout changement, on pousse "friends_changed" aux deux intéressés :
+# leurs clients re-demandent alors leur friendlist à jour.
+
+
+@socketio.on("friends")
+def ws_friends():
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    return social_payload(me["id"])
+
+
+@socketio.on("friend_request")
+def ws_friend_request(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    username = str((data or {}).get("username", "")).strip().lstrip("@")
+    if not username:
+        return {"error": "Pseudo vide."}
+    result = db.send_friend_request(me["id"], username)
+    if "error" in result:
+        return result
+    emit_to_user("friends_changed", {}, result["other_id"])
+    return result
+
+
+@socketio.on("friend_accept")
+def ws_friend_accept(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    other_id = int((data or {}).get("user_id", 0))
+    if not db.respond_friend_request(me["id"], other_id, accept=True):
+        return {"error": "Demande introuvable."}
+    emit_to_user("friends_changed", {}, other_id)
+    return {"ok": True}
+
+
+@socketio.on("friend_decline")
+def ws_friend_decline(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    other_id = int((data or {}).get("user_id", 0))
+    if not db.respond_friend_request(me["id"], other_id, accept=False):
+        return {"error": "Demande introuvable."}
+    emit_to_user("friends_changed", {}, other_id)
+    return {"ok": True}
+
+
+@socketio.on("friend_remove")
+def ws_friend_remove(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    other_id = int((data or {}).get("user_id", 0))
+    if not db.remove_friend(me["id"], other_id):
+        return {"error": "Ami introuvable."}
+    emit_to_user("friends_changed", {}, other_id)
+    return {"ok": True}
 
 
 if __name__ == "__main__":
