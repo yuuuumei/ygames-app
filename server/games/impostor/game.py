@@ -128,6 +128,25 @@ class ImpostorGame(Game):
             "word_impostor": self.word_impostor,
         }
 
+    def stats_report(self) -> dict:
+        """Faits par joueur (player_id -> dict) pour le système de stats.
+        Valide une fois la partie terminée."""
+        if self.phase != "over":
+            return {}
+        winners = set(self.winners)
+        report = {}
+        for pid in self.players:
+            voted_target = self.votes.get(pid)
+            report[pid] = {
+                "won": pid in winners,
+                "was_impostor": pid in self.impostor_ids,
+                # a voté pour un joueur qui était réellement imposteur
+                "voted_correctly": voted_target in self.impostor_ids
+                if voted_target is not None else False,
+                "gave_clue": pid in self.clues,
+            }
+        return report
+
     # -- hooks desktop -------------------------------------------------
     def on_disconnect(self, player_id: str) -> list[Event]:
         if player_id in self.players:

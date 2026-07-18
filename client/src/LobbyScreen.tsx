@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Friend, GameMeta, Lobby, PLAYABLE_GAMES } from "./useSocial";
+import { CosmeticsMap, Friend, GameMeta, Lobby, PLAYABLE_GAMES } from "./useSocial";
 import Avatar from "./components/Avatar";
+import { BorderedAvatar } from "./components/cosmetics";
+import { sound } from "./sound";
+import { toast } from "./toast";
 
 type Props = {
   lobby: Lobby;
   meId: number;
   friends: Friend[];
   games: GameMeta[];
+  cosmetics: CosmeticsMap;
   initialGameId?: string | null;
   onInvite: (userId: number) => Promise<string | null>;
   onKick: (userId: number) => Promise<string | null>;
@@ -47,6 +51,8 @@ export default function LobbyScreen(props: Props) {
   async function copyCode() {
     await navigator.clipboard.writeText(lobby.code).catch(() => {});
     setCopied(true);
+    sound.play("click");
+    toast("Code copié");
     setTimeout(() => setCopied(false), 1600);
   }
   async function submitChat(e: React.FormEvent) {
@@ -58,7 +64,11 @@ export default function LobbyScreen(props: Props) {
   }
   async function invite(id: number) {
     const err = await props.onInvite(id);
-    if (!err) setInvited((prev) => [...prev, id]);
+    if (!err) {
+      setInvited((prev) => [...prev, id]);
+      const f = props.friends.find((x) => x.id === id);
+      toast(`Invitation envoyée à ${f?.display_name ?? "ton pote"}`);
+    }
   }
   async function launch() {
     setError(await props.onStartGame("impostor"));
@@ -119,10 +129,21 @@ export default function LobbyScreen(props: Props) {
             {lobby.members.map((m) => {
               const isMe = m.id === props.meId;
               const isTheHost = m.id === lobby.host_id;
+              const cos = props.cosmetics[String(m.id)];
               return (
                 <div key={m.id} className={"tbl-seat" + (isMe ? " me" : "")}>
                   <div className={"tbl-seat-avatar" + (m.connected ? "" : " off")}>
-                    <Avatar url={m.avatar_url} name={m.display_name} />
+                    {cos ? (
+                      <BorderedAvatar
+                        url={m.avatar_url}
+                        name={m.display_name}
+                        size={40}
+                        visual={cos.border_visual}
+                        signature={cos.signature}
+                      />
+                    ) : (
+                      <Avatar url={m.avatar_url} name={m.display_name} />
+                    )}
                     {isTheHost && (
                       <span className="tbl-crown" title="Hôte">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -143,8 +164,7 @@ export default function LobbyScreen(props: Props) {
                       {isMe && <span className="tbl-badge-you">TOI</span>}
                     </div>
                     <div className="tbl-seat-status" style={{ color: m.connected ? "var(--txt-2)" : "var(--txt-3)" }}>
-                      {isTheHost ? "Hôte · " : ""}
-                      {m.connected ? "en ligne" : "déconnecté 💤"}
+                      {cos?.title ? cos.title : isTheHost ? "Hôte" : m.connected ? "en ligne" : "déconnecté 💤"}
                     </div>
                   </div>
                   {isHost && !isMe && (

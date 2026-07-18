@@ -7,6 +7,7 @@ Le GameRunner parle au monde via deux callbacks (on_event / on_sync) ;
 app.py les branche sur les WebSockets. Ici, zéro réseau : de la logique.
 """
 
+import db
 from core.contract import Player
 from core.runner import GameRunner
 from core import registry
@@ -16,7 +17,7 @@ import games.impostor.game  # noqa: F401
 import games.spyfall.game  # noqa: F401
 
 # lobby code -> session
-# session = {"game_id": str, "runner": GameRunner, "user_ids": [int]}
+# session = {"game_id", "runner", "user_ids", "host_id", "stats_saved"}
 sessions: dict[str, dict] = {}
 
 
@@ -79,6 +80,8 @@ def start(lobby: dict, game_id: str, config: dict, on_event, on_sync) -> dict | 
         "game_id": game_id,
         "runner": runner,
         "user_ids": [m["user"]["id"] for m in members],
+        "host_id": lobby["host_id"],
+        "stats_saved": False,
     }
     runner.start(config)
     return None
@@ -86,6 +89,35 @@ def start(lobby: dict, game_id: str, config: dict, on_event, on_sync) -> dict | 
 
 def get(code: str) -> dict | None:
     return sessions.get(code)
+
+
+def maybe_record_stats(code: str) -> bool:
+    """Si la partie est finie et pas encore comptée, enregistre les stats.
+    Renvoie True si un enregistrement a eu lieu (partie fraîchement finie)."""
+    session = sessions.get(code)
+    if not session or session["stats_saved"]:
+        return False
+    game = session["runner"].game
+    if not game.is_over():
+        return False
+
+    report = game.stats_report()  # player_id(str) -> faits
+    host_id = session["host_id"]
+    rows = []
+    for uid in session["user_ids"]:
+        facts = report.get(str(uid), {})
+        rows.append({
+            "user_id": uid,
+            "won": facts.get("won", False),
+            "was_impostor": facts.get("was_impostor", False),
+            "voted_correctly": facts.get("voted_correctly", False),
+            "gave_clue": facts.get("gave_clue", False),
+            "hosted": uid == host_id,
+        })
+    if rows:
+        db.record_game_stats(rows)
+    session["stats_saved"] = True
+    return True
 
 
 def end(code: str) -> None:

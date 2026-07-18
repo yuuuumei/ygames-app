@@ -1,15 +1,45 @@
-import { useMemo, useState } from "react";
-import { GamePlayer, GameView } from "./useSocial";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CosmeticsMap, GamePlayer, GameView } from "./useSocial";
 import Avatar from "./components/Avatar";
+import { BorderedAvatar, VictoryEffect } from "./components/cosmetics";
+import { sound } from "./sound";
 
 type Props = {
   view: GameView;
   myPlayerId: string;
   isHost: boolean;
   code: string;
+  cosmetics: CosmeticsMap;
+  myEffectVisual: any | null;
+  mySignature: string;
   onAction: (action: object) => Promise<string | null>;
   onEnd: () => Promise<string | null>;
 };
+
+/** Avatar d'un joueur avec sa bordure cosmétique (fallback simple si absente). */
+function PlayerAvatar({
+  player,
+  cosmetics,
+  size,
+}: {
+  player: GamePlayer;
+  cosmetics: CosmeticsMap;
+  size: number;
+}) {
+  const cos = cosmetics[player.id];
+  if (cos) {
+    return (
+      <BorderedAvatar
+        url={player.avatar}
+        name={player.name}
+        size={size}
+        visual={cos.border_visual}
+        signature={cos.signature}
+      />
+    );
+  }
+  return <Avatar url={player.avatar} name={player.name} size={size} />;
+}
 
 const CONFETTI = Array.from({ length: 16 }, (_, i) => ({
   left: `${4 + i * 6}%`,
@@ -31,6 +61,26 @@ export default function ImpostorScreen(props: Props) {
     view.players.forEach((p) => (m[p.name] = p));
     return m;
   }, [view.players]);
+
+  // --- sons pilotés par les transitions de phase / tour ---
+  const prevPhase = useRef<string | null>(null);
+  const myTurnRef = useRef(false);
+  useEffect(() => {
+    const phase = view.phase;
+    if (prevPhase.current !== phase) {
+      if (phase === "vote") sound.play("vote_open");
+      else if (phase === "over" && view.reveal) {
+        sound.play("reveal");
+        const iWon = me ? view.reveal.winners.includes(me.name) : false;
+        // le stinger de révélation puis l'issue
+        window.setTimeout(() => sound.play(iWon ? "victory" : "defeat"), 850);
+      }
+      prevPhase.current = phase;
+    }
+    const myTurn = phase === "clues" && view.current_turn_id === me?.id && !me?.has_clue;
+    if (myTurn && !myTurnRef.current) sound.play("your_turn");
+    myTurnRef.current = myTurn;
+  }, [view.phase, view.current_turn_id, view.reveal, me]);
 
   async function act(action: object) {
     setError(await props.onAction(action));
@@ -229,6 +279,7 @@ function Vote({
   myVote,
   setMyVote,
   act,
+  cosmetics,
 }: Props & {
   me?: GamePlayer;
   myVote: string | null;
@@ -269,7 +320,7 @@ function Vote({
               >
                 {picked && <div className="imp-vote-badge">TON VOTE</div>}
                 <div className="imp-vote-avatar">
-                  <Avatar url={p.avatar} name={p.name} />
+                  <PlayerAvatar player={p} cosmetics={cosmetics} size={64} />
                   {picked && <span className="imp-vote-ring" />}
                 </div>
                 <div className="imp-vote-name">{p.name}</div>
@@ -314,6 +365,8 @@ function Reveal({
   isHost,
   me,
   byName,
+  myEffectVisual,
+  mySignature,
   onEnd,
 }: Props & { me?: GamePlayer; byName: Record<string, GamePlayer> }) {
   const reveal = view.reveal!;
@@ -329,7 +382,13 @@ function Reveal({
           background: `radial-gradient(80% 70% at 50% 0%, ${bandeWon ? "rgba(67,209,122,.2)" : "rgba(255,77,94,.24)"}, transparent 60%)`,
         }}
       />
-      {bandeWon && (
+      {/* Si J'AI gagné : ma mise en scène perso. Sinon, confettis génériques
+          si c'est la bande qui l'emporte. */}
+      {didIWin ? (
+        <div className="imp-my-effect">
+          <VictoryEffect visual={myEffectVisual} signature={mySignature} playKey={1} />
+        </div>
+      ) : bandeWon ? (
         <div className="imp-confetti">
           {CONFETTI.map((c, i) => (
             <span
@@ -345,7 +404,7 @@ function Reveal({
             />
           ))}
         </div>
-      )}
+      ) : null}
 
       <div className="imp-reveal-inner">
         <div className={"imp-verdict" + (bandeWon ? " win" : " loss")}>

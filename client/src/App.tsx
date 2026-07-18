@@ -7,10 +7,13 @@ import LobbyScreen from "./LobbyScreen";
 import ImpostorScreen from "./ImpostorScreen";
 import FriendsRail from "./FriendsRail";
 import LoginScreen from "./LoginScreen";
+import ProfileScreen from "./ProfileScreen";
+import AdminScreen from "./AdminScreen";
 import Splash from "./Splash";
 import TitleBar from "./components/TitleBar";
 import YMark from "./components/YMark";
 import Avatar from "./components/Avatar";
+import { ToastHost } from "./toast";
 import "./theme.css";
 import "./_legacy.css";
 import "./App.css";
@@ -33,6 +36,8 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState("");
   const [pickedGame, setPickedGame] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const social = useSocial(screen.kind === "home");
 
   useEffect(() => {
@@ -82,6 +87,10 @@ function App() {
           onLogin={handleLogin}
           onLogout={handleLogout}
           onCancelLogin={handleCancelLogin}
+          showProfile={showProfile}
+          setShowProfile={setShowProfile}
+          adminOpen={adminOpen}
+          setAdminOpen={setAdminOpen}
         />
       </div>
 
@@ -130,6 +139,7 @@ function App() {
       )}
 
       <UpdateBanner />
+      <ToastHost />
     </div>
   );
 }
@@ -144,9 +154,13 @@ type BodyProps = {
   onLogin: () => void;
   onLogout: () => void;
   onCancelLogin: () => void;
+  showProfile: boolean;
+  setShowProfile: (v: boolean) => void;
+  adminOpen: boolean;
+  setAdminOpen: (v: boolean) => void;
 };
 
-function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin }: BodyProps) {
+function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, adminOpen, setAdminOpen }: BodyProps) {
   if (screen.kind === "loading") {
     return <Splash version={version} />;
   }
@@ -165,6 +179,32 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
 
   const { user } = screen;
 
+  // Back-office admin (réservé, accessible depuis Mon profil).
+  if (showProfile && adminOpen && social.profile?.is_admin && !social.lobby && !social.gameView) {
+    return <AdminScreen ask={social.ask} onClose={() => setAdminOpen(false)} />;
+  }
+
+  // Mon profil (accessible depuis l'accueil).
+  if (showProfile && !social.lobby && !social.gameView) {
+    if (!social.profile) {
+      return (
+        <div className="centered">
+          <YMark variant="app" size={56} speed={4} />
+        </div>
+      );
+    }
+    return (
+      <ProfileScreen
+        user={user}
+        profile={social.profile}
+        onSet={social.setCosmetic}
+        onClose={() => setShowProfile(false)}
+        onOpenAdmin={() => setAdminOpen(true)}
+        onLogout={onLogout}
+      />
+    );
+  }
+
   // Partie en cours (styles legacy — refonte à la tâche Imposteur).
   if (social.lobby && social.gameView) {
     return (
@@ -173,6 +213,11 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
         myPlayerId={String(user.id)}
         isHost={social.lobby.host_id === user.id}
         code={social.lobby.code}
+        cosmetics={social.cosmetics}
+        myEffectVisual={
+          social.profile?.catalog.effect.find((e) => e.id === social.profile!.equipped.effect)?.visual ?? null
+        }
+        mySignature={social.profile?.equipped.signature ?? "#7c6cff"}
         onAction={social.gameAction}
         onEnd={social.endGame}
       />
@@ -259,6 +304,7 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
         meId={user.id}
         friends={social.friends}
         games={social.games}
+        cosmetics={social.cosmetics}
         initialGameId={pickedGame}
         onInvite={social.inviteToLobby}
         onKick={social.kickFromLobby}
@@ -279,7 +325,7 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
         setPickedGame(id);
         await social.createLobby();
       }}
-      onLogout={onLogout}
+      onOpenProfile={() => setShowProfile(true)}
     />
   );
 }
@@ -291,13 +337,13 @@ function Launcher({
   social,
   version,
   onPickGame,
-  onLogout,
+  onOpenProfile,
 }: {
   user: User;
   social: ReturnType<typeof useSocial>;
   version: string;
   onPickGame: (id: string) => void;
-  onLogout: () => void;
+  onOpenProfile: () => void;
 }) {
   const [code, setCode] = useState("");
   const impostor = social.games.find((g) => g.id === "impostor");
@@ -341,7 +387,7 @@ function Launcher({
 
           <div className="header-sep" />
 
-          <button className="profile-chip" onClick={onLogout} title="Se déconnecter">
+          <button className="profile-chip" onClick={onOpenProfile} title="Mon profil">
             <div className="profile-avatar-wrap">
               <Avatar url={user.avatar_url} name={user.display_name} size={36} />
               <span

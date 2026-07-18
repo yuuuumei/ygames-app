@@ -59,6 +59,44 @@ def init_db() -> None:
             created_at   INTEGER NOT NULL,
             UNIQUE(requester_id, addressee_id)
         );
+
+        -- Stats cumulées par joueur (alimentent les déblocages cosmétiques).
+        CREATE TABLE IF NOT EXISTS stats (
+            user_id            INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            games_played       INTEGER NOT NULL DEFAULT 0,
+            wins               INTEGER NOT NULL DEFAULT 0,
+            impostor_games     INTEGER NOT NULL DEFAULT 0,
+            impostor_wins      INTEGER NOT NULL DEFAULT 0,
+            correct_votes      INTEGER NOT NULL DEFAULT 0,
+            wins_without_clue  INTEGER NOT NULL DEFAULT 0,
+            wrong_vote_streak  INTEGER NOT NULL DEFAULT 0,
+            games_hosted       INTEGER NOT NULL DEFAULT 0
+        );
+
+        -- Cosmétiques équipés par joueur.
+        CREATE TABLE IF NOT EXISTS cosmetics (
+            user_id   INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            title     TEXT NOT NULL DEFAULT 'nouveau',
+            border    TEXT NOT NULL DEFAULT 'neon',
+            effect    TEXT NOT NULL DEFAULT 'confettis',
+            signature TEXT NOT NULL DEFAULT '#7c6cff'
+        );
+
+        -- Catalogue des cosmétiques, géré depuis le back-office admin.
+        -- cond_stat NULL = débloqué d'office ; sinon déblocage si
+        -- stats[cond_stat] >= cond_value. visual = JSON (bordure/effet).
+        CREATE TABLE IF NOT EXISTS catalog (
+            id         TEXT PRIMARY KEY,
+            slot       TEXT NOT NULL,
+            name       TEXT NOT NULL,
+            sub        TEXT NOT NULL DEFAULT '',
+            locked_sub TEXT NOT NULL DEFAULT '',
+            cond_stat  TEXT,
+            cond_value INTEGER NOT NULL DEFAULT 0,
+            visual     TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            enabled    INTEGER NOT NULL DEFAULT 1
+        );
         """
     )
     conn.commit()
@@ -275,3 +313,173 @@ def get_social(user_id: int) -> dict:
         "incoming": [dict(r) for r in incoming],
         "outgoing": [dict(r) for r in outgoing],
     }
+
+
+# --------------------------------------------------------- stats & cosmétiques
+
+STAT_FIELDS = (
+    "games_played",
+    "wins",
+    "impostor_games",
+    "impostor_wins",
+    "correct_votes",
+    "wins_without_clue",
+    "wrong_vote_streak",
+    "games_hosted",
+)
+
+
+def _ensure_profile(conn, user_id: int) -> None:
+    """Crée les lignes stats/cosmetics du user si absentes."""
+    conn.execute("INSERT OR IGNORE INTO stats (user_id) VALUES (?)", (user_id,))
+    conn.execute("INSERT OR IGNORE INTO cosmetics (user_id) VALUES (?)", (user_id,))
+
+
+def get_stats(user_id: int) -> dict:
+    conn = get_db()
+    _ensure_profile(conn, user_id)
+    conn.commit()
+    row = conn.execute("SELECT * FROM stats WHERE user_id = ?", (user_id,)).fetchone()
+    conn.close()
+    return {k: row[k] for k in STAT_FIELDS}
+
+
+def get_cosmetics(user_id: int) -> dict:
+    conn = get_db()
+    _ensure_profile(conn, user_id)
+    conn.commit()
+    row = conn.execute(
+        "SELECT title, border, effect, signature FROM cosmetics WHERE user_id = ?",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return dict(row)
+
+
+def set_cosmetic(user_id: int, slot: str, value: str) -> None:
+    if slot not in ("title", "border", "effect", "signature"):
+        raise ValueError(f"slot inconnu : {slot}")
+    conn = get_db()
+    _ensure_profile(conn, user_id)
+    conn.execute(f"UPDATE cosmetics SET {slot} = ? WHERE user_id = ?", (value, user_id))
+    conn.commit()
+    conn.close()
+
+
+def record_game_stats(reports: list[dict]) -> None:
+    """Applique les faits d'une partie terminée aux stats de chaque joueur.
+
+    Chaque report : {user_id, won, was_impostor, voted_correctly, gave_clue, hosted}.
+    wrong_vote_streak : remis à 0 si le joueur a bien voté, +1 sinon.
+    """
+    conn = get_db()
+    for r in reports:
+        uid = r["user_id"]
+        _ensure_profile(conn, uid)
+        won = bool(r.get("won"))
+        was_imp = bool(r.get("was_impostor"))
+        voted_ok = bool(r.get("voted_correctly"))
+        gave_clue = bool(r.get("gave_clue"))
+        hosted = bool(r.get("hosted"))
+        conn.execute(
+            """
+            UPDATE stats SET
+                games_played      = games_played + 1,
+                wins              = wins + ?,
+                impostor_games    = impostor_games + ?,
+                impostor_wins     = impostor_wins + ?,
+                correct_votes     = correct_votes + ?,
+                wins_without_clue = wins_without_clue + ?,
+                games_hosted      = games_hosted + ?,
+                wrong_vote_streak = CASE WHEN ? THEN 0 ELSE wrong_vote_streak + ? END
+            WHERE user_id = ?
+            """,
+            (
+                1 if won else 0,
+                1 if was_imp else 0,
+                1 if (was_imp and won) else 0,
+                1 if voted_ok else 0,
+                1 if (won and not gave_clue) else 0,
+                1 if hosted else 0,
+                1 if voted_ok else 0,          # remet la série à 0
+                0 if voted_ok else 1,          # sinon +1
+                uid,
+            ),
+        )
+    conn.commit()
+    conn.close()
+
+
+# ------------------------------------------------------------- catalogue
+
+CATALOG_FIELDS = (
+    "id", "slot", "name", "sub", "locked_sub",
+    "cond_stat", "cond_value", "visual", "sort_order", "enabled",
+)
+
+
+def catalog_all(include_disabled: bool = False) -> list[dict]:
+    conn = get_db()
+    q = "SELECT * FROM catalog"
+    if not include_disabled:
+        q += " WHERE enabled = 1"
+    q += " ORDER BY slot, sort_order, name"
+    rows = conn.execute(q).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def catalog_get(item_id: str) -> dict | None:
+    conn = get_db()
+    row = conn.execute("SELECT * FROM catalog WHERE id = ?", (item_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def catalog_upsert(item: dict) -> None:
+    conn = get_db()
+    conn.execute(
+        """
+        INSERT INTO catalog (id, slot, name, sub, locked_sub, cond_stat,
+                             cond_value, visual, sort_order, enabled)
+        VALUES (:id, :slot, :name, :sub, :locked_sub, :cond_stat,
+                :cond_value, :visual, :sort_order, :enabled)
+        ON CONFLICT(id) DO UPDATE SET
+            slot=excluded.slot, name=excluded.name, sub=excluded.sub,
+            locked_sub=excluded.locked_sub, cond_stat=excluded.cond_stat,
+            cond_value=excluded.cond_value, visual=excluded.visual,
+            sort_order=excluded.sort_order, enabled=excluded.enabled
+        """,
+        {
+            "id": item["id"],
+            "slot": item["slot"],
+            "name": item["name"],
+            "sub": item.get("sub", ""),
+            "locked_sub": item.get("locked_sub", ""),
+            "cond_stat": item.get("cond_stat"),
+            "cond_value": int(item.get("cond_value", 0)),
+            "visual": item.get("visual"),
+            "sort_order": int(item.get("sort_order", 0)),
+            "enabled": 1 if item.get("enabled", True) else 0,
+        },
+    )
+    conn.commit()
+    conn.close()
+
+
+def catalog_delete(item_id: str) -> None:
+    conn = get_db()
+    conn.execute("DELETE FROM catalog WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+
+
+def seed_catalog(seed_rows: list[dict]) -> None:
+    """Insère le catalogue par défaut si la table est vide (1re init)."""
+    conn = get_db()
+    count = conn.execute("SELECT COUNT(*) AS n FROM catalog").fetchone()["n"]
+    conn.close()
+    if count == 0:
+        for i, row in enumerate(seed_rows):
+            row.setdefault("sort_order", i)
+            catalog_upsert(row)

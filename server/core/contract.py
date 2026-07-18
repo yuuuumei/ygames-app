@@ -112,3 +112,9 @@ class Game(ABC):
 
     def on_reconnect(self, player_id: str) -> list[Event]:
         return []
+
+    # --- stats optionnelles : faits par joueur en fin de partie ---
+    def stats_report(self) -> dict:
+        """player_id -> {won, was_impostor, voted_correctly, gave_clue}.
+        Vide par défaut (jeu sans progression)."""
+        return {}

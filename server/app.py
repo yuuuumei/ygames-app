@@ -22,13 +22,22 @@ load_dotenv()  # charge server/.env
 import db  # noqa: E402  (après load_dotenv pour que DATABASE_PATH soit lu)
 import lobbies as lb  # noqa: E402
 import game_sessions as gs  # noqa: E402
+import profiles  # noqa: E402
 
 DISCORD_API = "https://discord.com/api/v10"
 CLIENT_ID = os.environ["DISCORD_CLIENT_ID"]
 CLIENT_SECRET = os.environ["DISCORD_CLIENT_SECRET"]
+ADMIN_DISCORD_IDS = {
+    x.strip() for x in os.environ.get("ADMIN_DISCORD_IDS", "").split(",") if x.strip()
+}
 
 app = Flask(__name__)
 db.init_db()
+profiles.ensure_seed()  # remplit le catalogue par défaut au 1er lancement
+
+
+def is_admin(user: dict | None) -> bool:
+    return bool(user) and user.get("discord_id") in ADMIN_DISCORD_IDS
 
 # cors "*" : le client est une app Tauri (origine tauri://), pas un site web.
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -302,9 +311,23 @@ def ws_friend_remove(data):
 # ============================================================ lobby (WS)
 
 
+def cosmetics_map(user_ids) -> dict:
+    """{ user_id(str) -> {border_visual, signature, title} } pour les avatars.
+    On envoie le VISUEL résolu de la bordure (params), pas juste son id."""
+    out = {}
+    for uid in user_ids:
+        c = db.get_cosmetics(uid)
+        out[str(uid)] = {
+            "border_visual": profiles.visual_of(c["border"]),
+            "signature": c["signature"],
+            "title": profiles.title_name(c["title"]),
+        }
+    return out
+
+
 def broadcast_lobby(lobby: dict) -> None:
     """Pousse l'état du lobby à tous ses membres (toutes leurs connexions)."""
-    data = {"lobby": lb.serialize(lobby)}
+    data = {"lobby": lb.serialize(lobby), "cosmetics": cosmetics_map(lobby["members"].keys())}
     for uid in lobby["members"]:
         emit_to_user("lobby_update", data, uid)
 
@@ -443,7 +466,9 @@ def _game_callbacks(lobby_code: str):
             emit_to_user("game_event", payload, int(event.to))
 
     def on_sync(player_id, view):
-        emit_to_user("game_view", {"view": view}, int(player_id))
+        session = gs.get(lobby_code)
+        cos = cosmetics_map(session["user_ids"]) if session else {}
+        emit_to_user("game_view", {"view": view, "cosmetics": cos}, int(player_id))
 
     return on_event, on_sync
 
@@ -486,6 +511,10 @@ def ws_game_action(data):
     if action.get("type") == "open_vote" and lobby["host_id"] != me["id"]:
         return {"error": "Seul le host peut ouvrir le vote."}
     session["runner"].action(str(me["id"]), action)
+    # Partie qui vient de se terminer → on compte les stats une seule fois.
+    if gs.maybe_record_stats(lobby["code"]):
+        for uid in session["user_ids"]:
+            emit_to_user("profile_stale", {}, uid)
     return {"ok": True}
 
 
@@ -498,7 +527,9 @@ def ws_game_state(_data=None):
     lobby = lb.get(me["id"])
     if not lobby:
         return {"view": None}
-    return {"view": gs.view_for(lobby["code"], me["id"])}
+    session = gs.get(lobby["code"])
+    cos = cosmetics_map(session["user_ids"]) if session else {}
+    return {"view": gs.view_for(lobby["code"], me["id"]), "cosmetics": cos}
 
 
 @socketio.on("game_end")
@@ -519,6 +550,127 @@ def ws_game_end(_data=None):
     for uid in session["user_ids"]:
         emit_to_user("game_ended", {}, uid)
     return {"ok": True}
+
+
+# ============================================================ profil (WS)
+
+
+@socketio.on("profile_get")
+def ws_profile_get(_data=None):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    stats = db.get_stats(me["id"])
+    cosmetics = db.get_cosmetics(me["id"])
+    prof = profiles.full_profile(stats, cosmetics)
+    prof["is_admin"] = is_admin(me)
+    return {"profile": prof}
+
+
+@socketio.on("profile_set")
+def ws_profile_set(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    slot = str((data or {}).get("slot", ""))
+    value = str((data or {}).get("value", ""))
+
+    if slot == "signature":
+        # couleur libre parmi la palette proposée
+        if not (value.startswith("#") and len(value) == 7):
+            return {"error": "Couleur invalide."}
+        db.set_cosmetic(me["id"], "signature", value)
+    elif slot in ("title", "border", "effect"):
+        stats = db.get_stats(me["id"])
+        if not profiles.is_unlocked(slot, value, stats):
+            return {"error": "Ce cosmétique n'est pas encore débloqué."}
+        db.set_cosmetic(me["id"], slot, value)
+    else:
+        return {"error": "Slot inconnu."}
+
+    cosmetics = db.get_cosmetics(me["id"])
+    # Prévenir les tables où le user est présent (avatar/bordure à rafraîchir).
+    lobby = lb.get(me["id"])
+    if lobby:
+        broadcast_lobby(lobby)
+    return {"equipped": cosmetics}
+
+
+# ============================================================ admin (WS)
+# Back-office : gestion du catalogue de cosmétiques. Réservé aux admins.
+
+import json as _json  # noqa: E402
+
+VALID_SLOTS = ("title", "border", "effect")
+
+
+@socketio.on("admin_meta")
+def ws_admin_meta(_data=None):
+    """Vocabulaire pour l'éditeur admin (stats, styles, moteurs)."""
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    return {
+        "stats": profiles.KNOWN_STATS,
+        "border_styles": profiles.BORDER_STYLES,
+        "effect_engines": profiles.EFFECT_ENGINES,
+        "color_modes": profiles.COLOR_MODES,
+    }
+
+
+@socketio.on("admin_catalog")
+def ws_admin_catalog(_data=None):
+    """Catalogue complet (y compris désactivés) pour l'admin."""
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    return {"catalog": db.catalog_all(include_disabled=True)}
+
+
+@socketio.on("admin_catalog_save")
+def ws_admin_catalog_save(data):
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    item = (data or {}).get("item") or {}
+    item_id = str(item.get("id", "")).strip().lower()
+    if not item_id or not item_id.replace("-", "").replace("_", "").isalnum():
+        return {"error": "id invalide (lettres/chiffres/-/_ uniquement)"}
+    if item.get("slot") not in VALID_SLOTS:
+        return {"error": "type invalide"}
+    if not str(item.get("name", "")).strip():
+        return {"error": "nom requis"}
+
+    # visual : accepte un dict → on le sérialise en JSON pour la DB
+    visual = item.get("visual")
+    if isinstance(visual, (dict, list)):
+        visual = _json.dumps(visual)
+
+    db.catalog_upsert({
+        "id": item_id,
+        "slot": item["slot"],
+        "name": str(item["name"]).strip(),
+        "sub": str(item.get("sub", "")).strip(),
+        "locked_sub": str(item.get("locked_sub", "")).strip(),
+        "cond_stat": item.get("cond_stat") or None,
+        "cond_value": int(item.get("cond_value") or 0),
+        "visual": visual,
+        "sort_order": int(item.get("sort_order") or 0),
+        "enabled": bool(item.get("enabled", True)),
+    })
+    return {"ok": True, "catalog": db.catalog_all(include_disabled=True)}
+
+
+@socketio.on("admin_catalog_delete")
+def ws_admin_catalog_delete(data):
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    item_id = str((data or {}).get("id", ""))
+    if item_id in profiles.DEFAULTS.values():
+        return {"error": "Impossible de supprimer un cosmétique par défaut."}
+    db.catalog_delete(item_id)
+    return {"ok": True, "catalog": db.catalog_all(include_disabled=True)}
 
 
 if __name__ == "__main__":

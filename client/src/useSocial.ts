@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { io, Socket } from "socket.io-client";
 import { SERVER_URL } from "./server";
+import { sound } from "./sound";
 
 export type Friend = {
   id: number;
@@ -17,6 +18,32 @@ export type ChatMessage = {
   text: string;
   ts: number;
 };
+
+// ---- profil / cosmétiques ----
+export type Equipped = {
+  title: string;
+  border: string;
+  effect: string;
+  signature: string;
+};
+export type CatalogItem = {
+  id: string;
+  name: string;
+  sub: string;
+  unlocked: boolean;
+  progress: string | null;
+  visual: any | null;
+};
+export type Profile = {
+  stats: Record<string, number>;
+  equipped: Equipped;
+  catalog: { title: CatalogItem[]; border: CatalogItem[]; effect: CatalogItem[] };
+  is_admin?: boolean;
+};
+
+// user_id(str) -> cosmétiques à afficher sur son avatar
+export type CosmeticInfo = { border_visual: any | null; signature: string; title: string };
+export type CosmeticsMap = Record<string, CosmeticInfo>;
 
 export type Lobby = {
   code: string;
@@ -90,6 +117,8 @@ export function useSocial(loggedIn: boolean) {
   const [invites, setInvites] = useState<LobbyInvite[]>([]);
   const [gameView, setGameView] = useState<GameView | null>(null);
   const [games, setGames] = useState<GameMeta[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [cosmetics, setCosmetics] = useState<CosmeticsMap>({});
   const socketRef = useRef<Socket | null>(null);
   const lobbyRef = useRef<Lobby | null>(null);
   const pendingRef = useRef<Lobby | null>(null);
@@ -99,6 +128,12 @@ export function useSocial(loggedIn: boolean) {
   const refresh = useCallback(() => {
     socketRef.current?.emit("friends", (resp: SocialState & { error?: string }) => {
       if (!resp.error) setSocial(resp);
+    });
+  }, []);
+
+  const refreshProfile = useCallback(() => {
+    socketRef.current?.emit("profile_get", (resp: { profile?: Profile; error?: string }) => {
+      if (resp?.profile) setProfile(resp.profile);
     });
   }, []);
 
@@ -120,6 +155,7 @@ export function useSocial(loggedIn: boolean) {
       socket.on("connect", () => {
         setConnected(true);
         refresh(); // friendlist fraîche à chaque (re)connexion
+        refreshProfile(); // cosmétiques + stats
         // Re-synchronise le lobby (on y est peut-être encore, délai de grâce).
         socket.emit("lobby_state", (resp: { lobby: Lobby | null }) => {
           const found = resp?.lobby ?? null;
@@ -138,7 +174,8 @@ export function useSocial(loggedIn: boolean) {
       socket.on("disconnect", () => setConnected(false));
 
       // ------- lobby -------
-      socket.on("lobby_update", (data: { lobby: Lobby }) => {
+      socket.on("lobby_update", (data: { lobby: Lobby; cosmetics?: CosmeticsMap }) => {
+        if (data.cosmetics) setCosmetics(data.cosmetics);
         // Tant que la reconnexion n'est pas choisie, on met à jour la
         // proposition, pas l'écran.
         if (pendingRef.current) {
@@ -153,10 +190,8 @@ export function useSocial(loggedIn: boolean) {
         );
       });
       socket.on("lobby_invited", (inv: LobbyInvite) => {
-        setInvites((prev) => [
-          ...prev.filter((i) => i.code !== inv.code),
-          inv,
-        ]);
+        setInvites((prev) => [...prev.filter((i) => i.code !== inv.code), inv]);
+        sound.play("your_turn");
       });
       socket.on("lobby_kicked", () => {
         setLobby(null);
@@ -165,16 +200,21 @@ export function useSocial(loggedIn: boolean) {
       });
 
       // ------- jeux -------
-      socket.on("game_view", (data: { view: GameView }) => {
+      socket.on("game_view", (data: { view: GameView; cosmetics?: CosmeticsMap }) => {
+        if (data.cosmetics) setCosmetics(data.cosmetics);
         setGameView(data.view);
       });
       socket.on("game_ended", () => setGameView(null));
+
+      // stats mises à jour (fin de partie) → recharge le profil
+      socket.on("profile_stale", () => refreshProfile());
 
       socket.emit("game_list", (resp: { games: GameMeta[] }) => {
         if (resp?.games) setGames(resp.games);
       });
       // Une partie en cours ? (reconnexion en plein jeu)
-      socket.emit("game_state", (resp: { view: GameView | null }) => {
+      socket.emit("game_state", (resp: { view: GameView | null; cosmetics?: CosmeticsMap }) => {
+        if (resp?.cosmetics) setCosmetics(resp.cosmetics);
         setGameView(resp?.view ?? null);
       });
 
@@ -236,6 +276,7 @@ export function useSocial(loggedIn: boolean) {
             resolve(resp.error);
           } else {
             if (resp?.lobby !== undefined) setLobby(resp.lobby);
+            if (resp?.lobby) sound.play("join"); // on entre dans une table
             resolve(null);
           }
         });
@@ -254,6 +295,7 @@ export function useSocial(loggedIn: boolean) {
     lobby,
     pendingLobby,
     invites,
+    cosmetics,
     createLobby: () => lobbyAct("lobby_create"),
     joinLobby: (code: string) => {
       setInvites((prev) => prev.filter((i) => i.code !== code));
@@ -284,5 +326,35 @@ export function useSocial(loggedIn: boolean) {
       if (!err) setGameView(null);
       return err;
     },
+
+    profile,
+    // requête générique avec ack (renvoie toute la réponse) — pour l'admin
+    ask: (event: string, data: object = {}) =>
+      new Promise<any>((resolve) => {
+        const socket = socketRef.current;
+        if (!socket?.connected) {
+          resolve({ error: "Pas de connexion au serveur." });
+          return;
+        }
+        socket.emit(event, data, (resp: any) => resolve(resp ?? {}));
+      }),
+    setCosmetic: (slot: string, value: string) =>
+      new Promise<string | null>((resolve) => {
+        const socket = socketRef.current;
+        if (!socket?.connected) {
+          resolve("Pas de connexion au serveur.");
+          return;
+        }
+        socket.emit("profile_set", { slot, value }, (resp: { equipped?: Equipped; error?: string }) => {
+          if (resp?.error) {
+            resolve(resp.error);
+          } else {
+            if (resp?.equipped) {
+              setProfile((p) => (p ? { ...p, equipped: resp.equipped! } : p));
+            }
+            resolve(null);
+          }
+        });
+      }),
   };
 }

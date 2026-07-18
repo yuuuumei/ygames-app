@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Friend } from "./useSocial";
 import Avatar from "./components/Avatar";
+import { toast } from "./toast";
 
 type Props = {
   friends: Friend[];
@@ -29,8 +30,12 @@ export default function FriendsRail(props: Props) {
     setAddErr(null);
     const err = await props.onAdd(name.trim());
     setPending(false);
-    if (err) setAddErr(err);
-    else setName("");
+    if (err) {
+      setAddErr(err);
+    } else {
+      toast(`Demande envoyée à ${name.trim()}`);
+      setName("");
+    }
   }
 
   return (
