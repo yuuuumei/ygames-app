@@ -48,7 +48,7 @@ export type CosmeticsMap = Record<string, CosmeticInfo>;
 export type Lobby = {
   code: string;
   host_id: number;
-  members: (Friend & { connected: boolean })[];
+  members: (Friend & { connected: boolean; is_bot?: boolean })[];
   chat: ChatMessage[];
 };
 
@@ -67,6 +67,7 @@ export type GamePlayer = {
 };
 
 export type GameView = {
+  game?: string;
   phase: "clues" | "vote" | "over";
   category: string;
   your_word: string | null;
@@ -83,6 +84,78 @@ export type GameView = {
   };
 };
 
+// ---- Quiz Culture ----
+export type QuizPlayer = { id: string; name: string; avatar: string; connected: boolean };
+export type QuizEntry = {
+  id: string;
+  name: string;
+  avatar: string;
+  answer: string | null;
+  has_answer: boolean;
+  revealed: boolean;
+  grade: boolean | null;
+};
+export type QuizDoubt = {
+  player_id: string;
+  yes: number;
+  no: number;
+  voted_ids: string[];
+  your_vote: boolean | null;
+  total: number;
+};
+export type QuizRankRow = { id: string; name: string; avatar: string; score: number; rank: number };
+export type QuizReviewRow = {
+  number: number;
+  category: string;
+  text: string;
+  reference: string;
+  results: { id: string; name: string; answer: string | null; correct: boolean }[];
+};
+export type QuizView = {
+  game: "quiz";
+  phase: "answering" | "correcting" | "over";
+  total: number;
+  is_host: boolean;
+  host_id: string;
+  players: QuizPlayer[];
+  scores: Record<string, number>;
+  // answering
+  question?: { number: number; category: string; text: string };
+  duration?: number;
+  time_left?: number;
+  your_answer?: string | null;
+  answered_ids?: string[];
+  answered_count?: number;
+  waiting_count?: number;
+  // correcting
+  correction?: {
+    number: number;
+    category: string;
+    text: string;
+    reference: string;
+    entries: QuizEntry[];
+    revealed_count: number;
+    answerable_count: number;
+    all_revealed: boolean;
+    vote?: QuizDoubt;
+  };
+  // over
+  ranking?: QuizRankRow[];
+  review?: QuizReviewRow[];
+};
+
+/** Vue générique côté client : discriminée par `game` / `phase`. */
+export type AnyGameView = GameView | QuizView;
+
+export type GameOption = {
+  key: string;
+  label: string;
+  default: any;
+  choices: string[] | null;
+  min?: number | null;
+  max?: number | null;
+  step?: number | null;
+};
 export type GameMeta = {
   id: string;
   name: string;
@@ -90,10 +163,11 @@ export type GameMeta = {
   min_players: number;
   max_players: number;
   description: string;
+  options: GameOption[];
 };
 
 /** Les jeux qui ont déjà leur écran côté client. */
-export const PLAYABLE_GAMES = new Set(["impostor"]);
+export const PLAYABLE_GAMES = new Set(["impostor", "quiz"]);
 
 type SocialState = {
   friends: Friend[];
@@ -115,7 +189,7 @@ export function useSocial(loggedIn: boolean) {
   // d'y téléporter l'utilisateur (écran "Se reconnecter").
   const [pendingLobby, setPendingLobby] = useState<Lobby | null>(null);
   const [invites, setInvites] = useState<LobbyInvite[]>([]);
-  const [gameView, setGameView] = useState<GameView | null>(null);
+  const [gameView, setGameView] = useState<AnyGameView | null>(null);
   const [games, setGames] = useState<GameMeta[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cosmetics, setCosmetics] = useState<CosmeticsMap>({});
@@ -200,7 +274,7 @@ export function useSocial(loggedIn: boolean) {
       });
 
       // ------- jeux -------
-      socket.on("game_view", (data: { view: GameView; cosmetics?: CosmeticsMap }) => {
+      socket.on("game_view", (data: { view: AnyGameView; cosmetics?: CosmeticsMap }) => {
         if (data.cosmetics) setCosmetics(data.cosmetics);
         setGameView(data.view);
       });
@@ -213,7 +287,7 @@ export function useSocial(loggedIn: boolean) {
         if (resp?.games) setGames(resp.games);
       });
       // Une partie en cours ? (reconnexion en plein jeu)
-      socket.emit("game_state", (resp: { view: GameView | null; cosmetics?: CosmeticsMap }) => {
+      socket.emit("game_state", (resp: { view: AnyGameView | null; cosmetics?: CosmeticsMap }) => {
         if (resp?.cosmetics) setCosmetics(resp.cosmetics);
         setGameView(resp?.view ?? null);
       });
@@ -314,12 +388,13 @@ export function useSocial(loggedIn: boolean) {
       setInvites((prev) => prev.filter((i) => i.code !== code)),
     inviteToLobby: (userId: number) => act("lobby_invite", { user_id: userId }),
     kickFromLobby: (userId: number) => act("lobby_kick", { user_id: userId }),
+    addBot: () => act("lobby_add_bot", {}),
     sendChat: (text: string) => act("lobby_chat", { text }),
 
     gameView,
     games,
-    startGame: (gameId: string) =>
-      act("game_start", { game_id: gameId, config: {} }),
+    startGame: (gameId: string, config: Record<string, any> = {}) =>
+      act("game_start", { game_id: gameId, config }),
     gameAction: (action: object) => act("game_action", { action }),
     endGame: async () => {
       const err = await act("game_end", {});

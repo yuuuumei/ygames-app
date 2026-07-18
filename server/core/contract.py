@@ -34,6 +34,10 @@ class Option:
     label: str
     default: Any
     choices: list | None = None  # si présent → menu déroulant
+    # pour les options numériques (sinon None → menu déroulant via choices)
+    min: Any = None
+    max: Any = None
+    step: Any = None
 
 
 @dataclass

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CosmeticsMap, Friend, GameMeta, Lobby, PLAYABLE_GAMES } from "./useSocial";
 import Avatar from "./components/Avatar";
 import { BorderedAvatar } from "./components/cosmetics";
+import Dropdown from "./components/Dropdown";
 import { sound } from "./sound";
 import { toast } from "./toast";
 
@@ -12,11 +13,13 @@ type Props = {
   games: GameMeta[];
   cosmetics: CosmeticsMap;
   initialGameId?: string | null;
+  isAdmin?: boolean;
   onInvite: (userId: number) => Promise<string | null>;
   onKick: (userId: number) => Promise<string | null>;
+  onAddBot: () => Promise<string | null>;
   onLeave: () => Promise<string | null>;
   onChat: (text: string) => Promise<string | null>;
-  onStartGame: (gameId: string) => Promise<string | null>;
+  onStartGame: (gameId: string, config: Record<string, any>) => Promise<string | null>;
 };
 
 function fmtTime(ts: number): string {
@@ -37,13 +40,29 @@ export default function LobbyScreen(props: Props) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lobby.chat.length]);
 
+  // jeu sélectionné + config de la partie
+  const firstPlayable =
+    props.initialGameId && PLAYABLE_GAMES.has(props.initialGameId)
+      ? props.initialGameId
+      : props.games.find((g) => PLAYABLE_GAMES.has(g.id))?.id ?? "impostor";
+  const [selectedGameId, setSelectedGameId] = useState(firstPlayable);
+  const [config, setConfig] = useState<Record<string, any>>({});
+  const selectedGame = props.games.find((g) => g.id === selectedGameId);
+
+  useEffect(() => {
+    const g = props.games.find((x) => x.id === selectedGameId);
+    const init: Record<string, any> = {};
+    g?.options.forEach((o) => (init[o.key] = o.default));
+    setConfig(init);
+  }, [selectedGameId, props.games.length]);
+
   const host = lobby.members.find((m) => m.id === lobby.host_id);
-  const impostor = props.games.find((g) => g.id === "impostor");
-  const min = impostor?.min_players ?? 3;
-  const max = impostor?.max_players ?? 12;
+  const min = selectedGame?.min_players ?? 3;
+  const max = selectedGame?.max_players ?? 12;
   const connectedCount = lobby.members.filter((m) => m.connected).length;
   const enough = connectedCount >= min;
   const freeSeats = Math.max(0, max - lobby.members.length);
+  const maxImpostors = Math.max(1, connectedCount - 1);
 
   const memberIds = new Set(lobby.members.map((m) => m.id));
   const invitable = props.friends.filter((f) => f.online && !memberIds.has(f.id));
@@ -71,7 +90,10 @@ export default function LobbyScreen(props: Props) {
     }
   }
   async function launch() {
-    setError(await props.onStartGame("impostor"));
+    setError(await props.onStartGame(selectedGameId, config));
+  }
+  function setOpt(key: string, value: any) {
+    setConfig((c) => ({ ...c, [key]: value }));
   }
 
   return (
@@ -162,9 +184,10 @@ export default function LobbyScreen(props: Props) {
                         {m.display_name}
                       </span>
                       {isMe && <span className="tbl-badge-you">TOI</span>}
+                      {m.is_bot && <span className="tbl-badge-bot">BOT</span>}
                     </div>
                     <div className="tbl-seat-status" style={{ color: m.connected ? "var(--txt-2)" : "var(--txt-3)" }}>
-                      {cos?.title ? cos.title : isTheHost ? "Hôte" : m.connected ? "en ligne" : "déconnecté 💤"}
+                      {m.is_bot ? "robot 🤖" : cos?.title ? cos.title : isTheHost ? "Hôte" : m.connected ? "en ligne" : "déconnecté 💤"}
                     </div>
                   </div>
                   {isHost && !isMe && (
@@ -187,6 +210,20 @@ export default function LobbyScreen(props: Props) {
                 </div>
                 <span className="muted small">Places libres · {freeSeats}</span>
               </div>
+            )}
+
+            {props.isAdmin && isHost && freeSeats > 0 && (
+              <button
+                className="tbl-add-bot"
+                onClick={async () => setError(await props.onAddBot())}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="4" y="8" width="16" height="11" rx="2" />
+                  <path d="M12 8V4M9 13h.01M15 13h.01M8 4h8" />
+                </svg>
+                Ajouter un bot
+                <span className="tbl-add-bot-tag">admin</span>
+              </button>
             )}
           </div>
 
@@ -227,93 +264,117 @@ export default function LobbyScreen(props: Props) {
           )}
         </aside>
 
-        {/* CENTRE : choix du jeu */}
+        {/* CENTRE : sélection du jeu + réglages */}
         <main className="tbl-center">
-          <div className="tbl-center-label">Choisis un jeu</div>
-
-          <div className="tbl-game-hero">
-            <div className="tbl-game-bg" />
-            <div className="tbl-game-watermark">?</div>
-            <div className="tbl-game-content">
-              <div>
-                <div className="tbl-game-tags">
-                  <span className="tbl-tag-selected">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    Sélectionné
-                  </span>
-                  <span className="muted small" style={{ fontWeight: 600 }}>
-                    {min} – {max} joueurs · ~15 min
-                  </span>
-                </div>
-                <div className="tbl-game-title">L'Imposteur</div>
-                <div className="tbl-game-desc">
-                  Tout le monde reçoit un mot. Un seul en a un autre — et il ne le sait pas. Indices,
-                  doutes, vote.
-                </div>
-              </div>
-
-              <div className="tbl-launch-row">
-                {isHost ? (
-                  enough ? (
-                    <>
-                      <button className="tbl-launch" onClick={launch}>
-                        <span className="hero-cta-sheen" />
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                        Lancer la partie
-                      </button>
-                      <span className="muted small" style={{ fontWeight: 500 }}>
-                        {connectedCount} joueurs prêts. C'est quand tu veux.
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="tbl-launch-wait">
-                        <span className="spinner" style={{ width: 18, height: 18, borderColor: "var(--txt-3)", borderTopColor: "transparent" }} />
-                        Encore {min - connectedCount} joueur{min - connectedCount > 1 ? "s" : ""}…
-                      </div>
-                      <span className="muted small" style={{ fontWeight: 500 }}>
-                        Invite tes potes ou partage le code.
-                      </span>
-                    </>
-                  )
-                ) : (
-                  <span className="muted" style={{ fontWeight: 500 }}>
-                    {host?.display_name} choisit et lance le jeu 👑
-                  </span>
-                )}
-              </div>
-            </div>
+          {/* sélecteur de jeu */}
+          <div className="tbl-field">
+            <span className="tbl-field-label">Le jeu</span>
+            <Dropdown
+              value={selectedGameId}
+              disabled={!isHost}
+              onChange={setSelectedGameId}
+              options={props.games.map((g) => ({
+                value: g.id,
+                label: g.name,
+                disabled: !PLAYABLE_GAMES.has(g.id),
+                hint: PLAYABLE_GAMES.has(g.id) ? undefined : "bientôt",
+              }))}
+            />
           </div>
 
-          <div className="tbl-switcher">
-            <div className="tbl-switch-card selected">
-              <div className="tbl-switch-top">
-                <span className="tbl-switch-name">L'Imposteur</span>
-                <span className="tbl-switch-live" />
+          {/* résumé du jeu */}
+          {selectedGame && (
+            <div className="tbl-game-brief">
+              <div className="tbl-game-brief-top">
+                <span className="tbl-game-brief-name">{selectedGame.name}</span>
+                <span className="muted small">
+                  {min}–{max} joueurs · ~15 min
+                </span>
               </div>
-              <div className="muted small">Info cachée</div>
+              <p className="tbl-game-brief-desc muted">{selectedGame.description}</p>
             </div>
-            {props.games
-              .filter((g) => !PLAYABLE_GAMES.has(g.id))
-              .map((g) => (
-                <div key={g.id} className="tbl-switch-card locked">
-                  <div className="tbl-switch-top">
-                    <span className="tbl-switch-name" style={{ color: "#cdd3e0" }}>
-                      {g.name}
-                    </span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="2.4">
-                      <rect x="3" y="11" width="18" height="10" rx="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
+          )}
+
+          {/* réglages */}
+          {selectedGame && selectedGame.options.length > 0 && (
+            <div className="tbl-settings">
+              <div className="tbl-settings-label">Réglages de la partie</div>
+              {selectedGame.options.map((opt) => {
+                const val = config[opt.key] ?? opt.default;
+                const step = opt.step ?? 1;
+                const optMin = opt.min ?? 1;
+                // n_impostors : plafond dynamique (jamais que des imposteurs).
+                const optMax = opt.key === "n_impostors" ? maxImpostors : (opt.max ?? 99);
+                return (
+                  <div key={opt.key} className="tbl-setting-row">
+                    <span className="tbl-setting-name">{opt.label}</span>
+                    {opt.choices ? (
+                      <Dropdown
+                        size="small"
+                        value={String(val)}
+                        disabled={!isHost}
+                        onChange={(v) => setOpt(opt.key, v)}
+                        options={opt.choices.map((ch) => ({ value: ch, label: ch }))}
+                      />
+                    ) : (
+                      <div className="tbl-stepper">
+                        <button
+                          className="tbl-step-btn"
+                          disabled={!isHost || Number(val) <= optMin}
+                          onClick={() => setOpt(opt.key, Math.max(optMin, Number(val) - step))}
+                        >
+                          −
+                        </button>
+                        <span className="tbl-step-val">{Number(val)}</span>
+                        <button
+                          className="tbl-step-btn"
+                          disabled={!isHost || Number(val) >= optMax}
+                          onClick={() => setOpt(opt.key, Math.min(optMax, Number(val) + step))}
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="muted small">Bientôt</div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+
+          <div className="tbl-center-spacer" />
+
+          {/* zone de lancement */}
+          <div className="tbl-launch-area">
+            {isHost ? (
+              enough ? (
+                <>
+                  <button className="tbl-launch" onClick={launch}>
+                    <span className="hero-cta-sheen" />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Lancer la partie
+                  </button>
+                  <span className="muted small" style={{ fontWeight: 500 }}>
+                    {connectedCount} joueurs prêts.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className="tbl-launch-wait">
+                    <span className="spinner" style={{ width: 18, height: 18, borderColor: "var(--txt-3)", borderTopColor: "transparent" }} />
+                    Encore {min - connectedCount} joueur{min - connectedCount > 1 ? "s" : ""}…
+                  </div>
+                  <span className="muted small" style={{ fontWeight: 500 }}>
+                    Invite tes potes ou partage le code.
+                  </span>
+                </>
+              )
+            ) : (
+              <span className="muted" style={{ fontWeight: 500 }}>
+                {host?.display_name} configure et lance le jeu 👑
+              </span>
+            )}
           </div>
 
           {error && <p className="error small" style={{ marginTop: 10 }}>{error}</p>}

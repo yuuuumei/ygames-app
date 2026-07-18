@@ -97,6 +97,16 @@ def init_db() -> None:
             sort_order INTEGER NOT NULL DEFAULT 0,
             enabled    INTEGER NOT NULL DEFAULT 1
         );
+
+        -- Banque de questions du Quiz Culture. `answer` = réponse de
+        -- référence (aide l'hôte à corriger ; réponses libres jugées à la main).
+        CREATE TABLE IF NOT EXISTS quiz_questions (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL DEFAULT 'Général',
+            question TEXT NOT NULL,
+            answer   TEXT NOT NULL DEFAULT '',
+            enabled  INTEGER NOT NULL DEFAULT 1
+        );
         """
     )
     conn.commit()
@@ -483,3 +493,78 @@ def seed_catalog(seed_rows: list[dict]) -> None:
         for i, row in enumerate(seed_rows):
             row.setdefault("sort_order", i)
             catalog_upsert(row)
+
+
+# ---------------------------------------------------- banque de questions quiz
+
+
+def quiz_count() -> int:
+    conn = get_db()
+    n = conn.execute("SELECT COUNT(*) AS n FROM quiz_questions WHERE enabled = 1").fetchone()["n"]
+    conn.close()
+    return n
+
+
+def quiz_categories() -> list[str]:
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT DISTINCT category FROM quiz_questions WHERE enabled = 1 ORDER BY category"
+    ).fetchall()
+    conn.close()
+    return [r["category"] for r in rows]
+
+
+def quiz_random(n: int, category: str | None = None) -> list[dict]:
+    """Tire n questions au hasard (optionnellement d'une catégorie)."""
+    conn = get_db()
+    if category:
+        rows = conn.execute(
+            "SELECT * FROM quiz_questions WHERE enabled = 1 AND category = ? ORDER BY RANDOM() LIMIT ?",
+            (category, n),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM quiz_questions WHERE enabled = 1 ORDER BY RANDOM() LIMIT ?",
+            (n,),
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def quiz_all() -> list[dict]:
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM quiz_questions ORDER BY category, id").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def quiz_upsert(item: dict) -> None:
+    conn = get_db()
+    if item.get("id"):
+        conn.execute(
+            "UPDATE quiz_questions SET category=?, question=?, answer=?, enabled=? WHERE id=?",
+            (item["category"], item["question"], item.get("answer", ""),
+             1 if item.get("enabled", True) else 0, item["id"]),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO quiz_questions (category, question, answer, enabled) VALUES (?, ?, ?, ?)",
+            (item["category"], item["question"], item.get("answer", ""),
+             1 if item.get("enabled", True) else 0),
+        )
+    conn.commit()
+    conn.close()
+
+
+def quiz_delete(qid: int) -> None:
+    conn = get_db()
+    conn.execute("DELETE FROM quiz_questions WHERE id = ?", (qid,))
+    conn.commit()
+    conn.close()
+
+
+def seed_quiz(rows: list[dict]) -> None:
+    """Remplit la banque si vide (1re init)."""
+    if quiz_count() == 0 and rows:
+        for r in rows:
+            quiz_upsert(r)

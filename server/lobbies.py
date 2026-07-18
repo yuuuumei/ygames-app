@@ -47,6 +47,32 @@ def create(user: dict) -> dict:
     return lobbies[code]
 
 
+def add_bot(code: str, user: dict) -> dict | None:
+    """Ajoute un membre BOT (piloté par le serveur, sans socket) au lobby."""
+    lobby = lobbies.get(code)
+    if not lobby:
+        return None
+    uid = user["id"]
+    lobby["members"][uid] = {
+        "user": user, "connected": True, "joined_at": time.time(), "is_bot": True,
+    }
+    user_lobby[uid] = code
+    return lobby
+
+
+def only_bots(lobby: dict) -> bool:
+    """True si plus aucun humain n'est dans le lobby (que des bots)."""
+    return all(m.get("is_bot") for m in lobby["members"].values())
+
+
+def purge(code: str) -> None:
+    """Détruit un lobby et libère tous ses membres (bots compris)."""
+    lobby = lobbies.pop(code, None)
+    if lobby:
+        for uid in lobby["members"]:
+            user_lobby.pop(uid, None)
+
+
 def join(user: dict, code: str) -> tuple[dict | None, str | None]:
     """Renvoie (lobby, None) ou (None, message d'erreur)."""
     code = code.strip().upper()
@@ -76,9 +102,10 @@ def leave(uid: int) -> dict | None:
         del lobbies[code]
         return None
     if lobby["host_id"] == uid:
-        lobby["host_id"] = min(
-            lobby["members"].items(), key=lambda kv: kv[1]["joined_at"]
-        )[0]
+        # Le host passe à l'humain le plus ancien (jamais à un bot).
+        humans = [kv for kv in lobby["members"].items() if not kv[1].get("is_bot")]
+        pool = humans or list(lobby["members"].items())
+        lobby["host_id"] = min(pool, key=lambda kv: kv[1]["joined_at"])[0]
     return lobby
 
 
@@ -117,7 +144,7 @@ def serialize(lobby: dict) -> dict:
         "code": lobby["code"],
         "host_id": lobby["host_id"],
         "members": [
-            {**m["user"], "connected": m["connected"]}
+            {**m["user"], "connected": m["connected"], "is_bot": m.get("is_bot", False)}
             for m in sorted(lobby["members"].values(), key=lambda m: m["joined_at"])
         ],
         "chat": lobby["chat"][-CHAT_HISTORY:],

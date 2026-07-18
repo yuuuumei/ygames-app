@@ -25,6 +25,8 @@ import socketio  # python-socketio (client)
 import db
 
 CLUE_WORDS = ["truc", "machin", "vibe", "genre", "style", "concept", "délire"]
+QUIZ_ANSWERS = ["42", "Paris", "Napoléon", "je sais pas", "le chat", "1789",
+                "bleu", "Zidane", "au pif", "banane"]
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -122,12 +124,39 @@ def main() -> None:
 
     # ------- le bot joue ! -------
     my_pid = {"v": None}
+    quiz_graded = set()  # index de correction déjà traités (bot hôte)
 
     @sio.on("game_view")
     def on_game_view(data):
         view = data["view"]
         pid = my_pid["v"] = str(user["id"])
         phase = view["phase"]
+
+        # ---- Quiz Culture ----
+        if view.get("game") == "quiz":
+            if phase == "answering" and view.get("question"):
+                if view.get("your_answer") is None:
+                    idx = view["question"]["number"] - 1
+                    ans = random.choice(QUIZ_ANSWERS)
+                    print(f"✍️ Q{idx + 1} → je réponds « {ans} »")
+                    sio.emit("game_action",
+                             {"action": {"type": "answer", "index": idx, "text": ans}})
+            elif phase == "correcting" and view.get("is_host"):
+                # bot hôte (test auto) : corrige au pif puis avance, 1x par question
+                c = view["correction"]
+                idx = c["number"] - 1
+                if idx not in quiz_graded:
+                    quiz_graded.add(idx)
+                    for e in c["entries"]:
+                        if e["answer"] and e["grade"] is None:
+                            sio.emit("game_action", {"action": {
+                                "type": "grade", "index": idx,
+                                "player_id": e["id"], "correct": random.random() < 0.6}})
+                    sio.emit("game_action", {"action": {"type": "next_correction"}})
+            elif phase == "over" and view.get("ranking"):
+                top = view["ranking"][0]
+                print(f"🏁 quiz fini ! 1er : {top['name']} ({top['score']} pts)")
+            return
 
         if phase == "clues":
             me_in_game = next(p for p in view["players"] if p["id"] == pid)

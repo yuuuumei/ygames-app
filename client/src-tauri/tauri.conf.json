@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "yGAMES",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "identifier": "app.ygames.client",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,8 +26,8 @@
         "title": "yGAMES",
         "width": 1100,
         "height": 720,
-        "minWidth": 900,
-        "minHeight": 600,
+        "minWidth": 1000,
+        "minHeight": 680,
         "center": true,
         "decorations": false,
         "transparent": false

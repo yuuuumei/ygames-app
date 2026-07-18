@@ -10,6 +10,7 @@ WebSocket (SocketIO): connexion permanente de chaque client connecté.
 """
 
 import os
+import random
 import secrets
 
 import requests
@@ -23,6 +24,7 @@ import db  # noqa: E402  (après load_dotenv pour que DATABASE_PATH soit lu)
 import lobbies as lb  # noqa: E402
 import game_sessions as gs  # noqa: E402
 import profiles  # noqa: E402
+import bots  # noqa: E402
 
 DISCORD_API = "https://discord.com/api/v10"
 CLIENT_ID = os.environ["DISCORD_CLIENT_ID"]
@@ -34,6 +36,9 @@ ADMIN_DISCORD_IDS = {
 app = Flask(__name__)
 db.init_db()
 profiles.ensure_seed()  # remplit le catalogue par défaut au 1er lancement
+
+from games.quiz.data import SEED_QUESTIONS as _QUIZ_SEED  # noqa: E402
+db.seed_quiz(_QUIZ_SEED)  # remplit la banque du Quiz au 1er lancement
 
 
 def is_admin(user: dict | None) -> bool:
@@ -237,6 +242,9 @@ def _grace_timeout(uid: int, code: str) -> None:
     if not lobby or uid not in lobby["members"]:
         return
     remaining = lb.leave(uid)
+    if remaining and lb.only_bots(remaining):
+        lb.purge(code)
+        remaining = None
     if remaining:
         broadcast_lobby(remaining)
     else:
@@ -339,6 +347,10 @@ def _leave_current_lobby(uid: int) -> None:
         return
     code = lobby["code"]
     remaining = lb.leave(uid)
+    # S'il ne reste que des bots, la table meurt aussi (les bots ne jouent pas seuls).
+    if remaining and lb.only_bots(remaining):
+        lb.purge(code)
+        remaining = None
     if remaining:
         broadcast_lobby(remaining)
     else:
@@ -429,6 +441,31 @@ def ws_lobby_kick(data):
     return {"ok": True}
 
 
+@socketio.on("lobby_add_bot")
+def ws_lobby_add_bot(_data=None):
+    """Ajoute un bot à la table (admin + host uniquement, hors partie)."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    if not is_admin(me):
+        return {"error": "Réservé à l'admin."}
+    lobby = lb.get(me["id"])
+    if not lobby:
+        return {"error": "Tu n'es pas dans un lobby."}
+    if lobby["host_id"] != me["id"]:
+        return {"error": "Seul l'hôte peut ajouter un bot."}
+    if gs.get(lobby["code"]):
+        return {"error": "Impossible pendant une partie."}
+    if len(lobby["members"]) >= 12:
+        return {"error": "La table est pleine."}
+    bot = _acquire_bot_user()
+    if not bot:
+        return {"error": "Plus de bot disponible."}
+    lb.add_bot(lobby["code"], bot)
+    broadcast_lobby(lobby)
+    return {"ok": True}
+
+
 @socketio.on("lobby_chat")
 def ws_lobby_chat(data):
     me = current_user()
@@ -469,8 +506,55 @@ def _game_callbacks(lobby_code: str):
         session = gs.get(lobby_code)
         cos = cosmetics_map(session["user_ids"]) if session else {}
         emit_to_user("game_view", {"view": view, "cosmetics": cos}, int(player_id))
+        # Un membre bot n'a pas de socket : le serveur le fait jouer.
+        if session and _is_bot(lobby_code, player_id):
+            socketio.start_background_task(_bot_tick, lobby_code, str(player_id))
 
     return on_event, on_sync
+
+
+def _is_bot(code: str, player_id) -> bool:
+    lobby = lb.lobbies.get(code)
+    if not lobby:
+        return False
+    member = lobby["members"].get(int(player_id))
+    return bool(member and member.get("is_bot"))
+
+
+def _bot_tick(code: str, pid: str) -> None:
+    """Fait jouer un bot : petite latence naturelle, puis une action si besoin.
+    Idempotent (rejoué à chaque sync) : ne fait rien s'il a déjà agi."""
+    socketio.sleep(random.uniform(0.5, 1.4))
+    session = gs.get(code)
+    if not session:
+        return
+    game = session["runner"].game
+    if game.is_over():
+        return
+    action = bots.decide(session["game_id"], game.public_view(pid), pid)
+    if not action:
+        return
+    session["runner"].action(pid, action)
+    if gs.maybe_record_stats(code):
+        for uid in session["user_ids"]:
+            emit_to_user("profile_stale", {}, uid)
+
+
+BOT_NAMES = ["Robo", "Botina", "Zap", "Nova", "Pixel", "Gizmo", "Turbo", "Volt"]
+
+
+def _acquire_bot_user() -> dict | None:
+    """Un user bot pas déjà attablé ailleurs (les bots sont réutilisés)."""
+    for name in BOT_NAMES:
+        row = db.upsert_user({
+            "id": f"bot-{name.lower()}",
+            "username": f"{name.lower()}bot",
+            "global_name": f"{name} 🤖",
+            "avatar": None,
+        })
+        if row["id"] not in lb.user_lobby:
+            return public_user(row)
+    return None
 
 
 @socketio.on("game_list")

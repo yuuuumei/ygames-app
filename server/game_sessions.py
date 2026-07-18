@@ -15,34 +15,46 @@ from core import registry
 # Importer un jeu = il s'enregistre dans le registre (décorateur @register).
 import games.impostor.game  # noqa: F401
 import games.spyfall.game  # noqa: F401
+import games.quiz.game  # noqa: F401
 
 # lobby code -> session
 # session = {"game_id", "runner", "user_ids", "host_id", "stats_saved"}
 sessions: dict[str, dict] = {}
 
 
+def _serialize_option(o) -> dict:
+    return {
+        "key": o.key,
+        "label": o.label,
+        "default": o.default,
+        "choices": o.choices,
+        "min": o.min,
+        "max": o.max,
+        "step": o.step,
+    }
+
+
 def list_games() -> list[dict]:
     """Les fiches des jeux disponibles, sérialisées pour le client."""
-    return [
-        {
+    games = []
+    for m in registry.all_meta():
+        options = [_serialize_option(o) for o in m.options]
+        # Le Quiz expose ses catégories réelles (banque vivante) au launcher.
+        if m.id == "quiz":
+            cats = db.quiz_categories()
+            for opt in options:
+                if opt["key"] == "category":
+                    opt["choices"] = ["aléatoire", *cats]
+        games.append({
             "id": m.id,
             "name": m.name,
             "icon": m.icon,
             "min_players": m.min_players,
             "max_players": m.max_players,
             "description": m.description,
-            "options": [
-                {
-                    "key": o.key,
-                    "label": o.label,
-                    "default": o.default,
-                    "choices": o.choices,
-                }
-                for o in m.options
-            ],
-        }
-        for m in registry.all_meta()
-    ]
+            "options": options,
+        })
+    return games
 
 
 def start(lobby: dict, game_id: str, config: dict, on_event, on_sync) -> dict | None:
@@ -83,6 +95,9 @@ def start(lobby: dict, game_id: str, config: dict, on_event, on_sync) -> dict | 
         "host_id": lobby["host_id"],
         "stats_saved": False,
     }
+    # Certains jeux (Quiz) ont besoin de savoir qui est l'hôte (il corrige).
+    # Player.id = str(user_id), donc on passe l'hôte au même format.
+    config = {**config, "host_id": str(lobby["host_id"])}
     runner.start(config)
     return None
 

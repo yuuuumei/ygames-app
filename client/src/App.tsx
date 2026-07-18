@@ -5,6 +5,7 @@ import UpdateBanner from "./UpdateBanner";
 import { useSocial } from "./useSocial";
 import LobbyScreen from "./LobbyScreen";
 import ImpostorScreen from "./ImpostorScreen";
+import QuizScreen from "./QuizScreen";
 import FriendsRail from "./FriendsRail";
 import LoginScreen from "./LoginScreen";
 import ProfileScreen from "./ProfileScreen";
@@ -14,6 +15,8 @@ import Splash from "./Splash";
 import TitleBar from "./components/TitleBar";
 import YMark from "./components/YMark";
 import Avatar from "./components/Avatar";
+import imposteurIcon from "./assets/imposteur-icon.png";
+import imposteurHero from "./assets/imposteur-hero.png";
 import { ToastHost } from "./toast";
 import "./theme.css";
 import "./_legacy.css";
@@ -216,23 +219,23 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
     );
   }
 
-  // Partie en cours (styles legacy — refonte à la tâche Imposteur).
+  // Partie en cours : on route selon le jeu.
   if (social.lobby && social.gameView) {
-    return (
-      <ImpostorScreen
-        view={social.gameView}
-        myPlayerId={String(user.id)}
-        isHost={social.lobby.host_id === user.id}
-        code={social.lobby.code}
-        cosmetics={social.cosmetics}
-        myEffectVisual={
-          social.profile?.catalog.effect.find((e) => e.id === social.profile!.equipped.effect)?.visual ?? null
-        }
-        mySignature={social.profile?.equipped.signature ?? "#7c6cff"}
-        onAction={social.gameAction}
-        onEnd={social.endGame}
-      />
-    );
+    const gameProps = {
+      myPlayerId: String(user.id),
+      isHost: social.lobby.host_id === user.id,
+      code: social.lobby.code,
+      cosmetics: social.cosmetics,
+      myEffectVisual:
+        social.profile?.catalog.effect.find((e) => e.id === social.profile!.equipped.effect)?.visual ?? null,
+      mySignature: social.profile?.equipped.signature ?? "#7c6cff",
+      onAction: social.gameAction,
+      onEnd: social.endGame,
+    };
+    if ((social.gameView as any).game === "quiz") {
+      return <QuizScreen view={social.gameView as any} {...gameProps} />;
+    }
+    return <ImpostorScreen view={social.gameView as any} {...gameProps} />;
   }
 
   // Reconnexion proposée : on propose, on n'impose pas.
@@ -317,8 +320,10 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
         games={social.games}
         cosmetics={social.cosmetics}
         initialGameId={pickedGame}
+        isAdmin={social.profile?.is_admin}
         onInvite={social.inviteToLobby}
         onKick={social.kickFromLobby}
+        onAddBot={social.addBot}
         onLeave={social.leaveLobby}
         onChat={social.sendChat}
         onStartGame={social.startGame}
@@ -476,13 +481,12 @@ function Launcher({
             <span className="games-bar-label">Jeux</span>
             <div className="games-bar-sep" />
             <button
-              className="gt-icon imposteur"
+              className="gt-icon gt-icon-game"
               title="L'Imposteur"
               disabled={!social.connected}
               onClick={() => onPickGame("impostor")}
             >
-              <span className="gt-qmark">?</span>
-              <span className="gt-dot" />
+              <img className="gt-icon-img" src={imposteurIcon} alt="L'Imposteur" />
             </button>
             <div className="gt-icon locked" title="Spyfall — bientôt">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -523,7 +527,7 @@ function Launcher({
             onClick={() => onPickGame("impostor")}
           >
             <div className="hero-bg" />
-            <div className="hero-watermark">?</div>
+            <img className="hero-poster" src={imposteurHero} alt="" />
             <div className="hero-scrim" />
             <div className="hero-content">
               <div className="hero-top">
