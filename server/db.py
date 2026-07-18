@@ -8,6 +8,7 @@ Deux tables :
 """
 
 import hashlib
+import json
 import os
 import sqlite3
 import time
@@ -107,6 +108,19 @@ def init_db() -> None:
             answer   TEXT NOT NULL DEFAULT '',
             enabled  INTEGER NOT NULL DEFAULT 1
         );
+
+        -- Historique des parties : une ligne par joueur et par partie terminée.
+        -- `detail` = JSON libre (rôle imposteur, rang du quiz, etc.).
+        CREATE TABLE IF NOT EXISTS match_history (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            game_id   TEXT NOT NULL,
+            won       INTEGER NOT NULL DEFAULT 0,
+            detail    TEXT NOT NULL DEFAULT '',
+            played_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_history_user
+            ON match_history(user_id, played_at DESC);
         """
     )
     conn.commit()
@@ -157,6 +171,13 @@ def create_session(user_id: int, token: str) -> None:
     )
     conn.commit()
     conn.close()
+
+
+def get_user_by_id(user_id: int) -> dict | None:
+    conn = get_db()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
 
 
 def get_user_by_token(token: str) -> dict | None:
@@ -418,6 +439,61 @@ def record_game_stats(reports: list[dict]) -> None:
         )
     conn.commit()
     conn.close()
+
+
+# ------------------------------------------------------------- historique
+
+def record_history(rows: list[dict]) -> None:
+    """Une ligne par joueur pour une partie terminée.
+    Chaque row : {user_id, game_id, won, detail (dict)}."""
+    if not rows:
+        return
+    now = int(time.time())
+    conn = get_db()
+    for r in rows:
+        conn.execute(
+            "INSERT INTO match_history (user_id, game_id, won, detail, played_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (r["user_id"], r["game_id"], 1 if r.get("won") else 0,
+             json.dumps(r.get("detail", {})), now),
+        )
+    conn.commit()
+    conn.close()
+
+
+def get_history(user_id: int, limit: int = 15) -> list[dict]:
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT game_id, won, detail, played_at FROM match_history "
+        "WHERE user_id = ? ORDER BY played_at DESC, id DESC LIMIT ?",
+        (user_id, limit),
+    ).fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        try:
+            detail = json.loads(r["detail"]) if r["detail"] else {}
+        except (ValueError, TypeError):
+            detail = {}
+        out.append({
+            "game_id": r["game_id"],
+            "won": bool(r["won"]),
+            "detail": detail,
+            "played_at": r["played_at"],
+        })
+    return out
+
+
+def game_breakdown(user_id: int) -> dict:
+    """Par jeu : {game_id: {played, wins}} — pour la vitrine du profil."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT game_id, COUNT(*) AS played, SUM(won) AS wins "
+        "FROM match_history WHERE user_id = ? GROUP BY game_id",
+        (user_id,),
+    ).fetchall()
+    conn.close()
+    return {r["game_id"]: {"played": r["played"], "wins": r["wins"] or 0} for r in rows}
 
 
 # ------------------------------------------------------------- catalogue

@@ -20,6 +20,7 @@ type Props = {
   onLeave: () => Promise<string | null>;
   onChat: (text: string) => Promise<string | null>;
   onStartGame: (gameId: string, config: Record<string, any>) => Promise<string | null>;
+  onViewProfile: (userId: number) => void;
 };
 
 function fmtTime(ts: number): string {
@@ -152,8 +153,14 @@ export default function LobbyScreen(props: Props) {
               const isMe = m.id === props.meId;
               const isTheHost = m.id === lobby.host_id;
               const cos = props.cosmetics[String(m.id)];
+              const viewable = !m.is_bot;
               return (
-                <div key={m.id} className={"tbl-seat" + (isMe ? " me" : "")}>
+                <div
+                  key={m.id}
+                  className={"tbl-seat" + (isMe ? " me" : "") + (viewable ? " clickable" : "")}
+                  onClick={viewable ? () => props.onViewProfile(m.id) : undefined}
+                  title={viewable ? "Voir le profil" : undefined}
+                >
                   <div className={"tbl-seat-avatar" + (m.connected ? "" : " off")}>
                     {cos ? (
                       <BorderedAvatar
@@ -191,7 +198,14 @@ export default function LobbyScreen(props: Props) {
                     </div>
                   </div>
                   {isHost && !isMe && (
-                    <button className="tbl-kick" title="Exclure" onClick={() => props.onKick(m.id)}>
+                    <button
+                      className="tbl-kick"
+                      title="Exclure"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.onKick(m.id);
+                      }}
+                    >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                         <path d="M18 6 6 18M6 6l12 12" />
                       </svg>

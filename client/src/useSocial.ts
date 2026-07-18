@@ -34,11 +34,33 @@ export type CatalogItem = {
   progress: string | null;
   visual: any | null;
 };
+export type PublicUser = {
+  id: number;
+  discord_id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+};
+export type HistoryEntry = {
+  game_id: string;
+  won: boolean;
+  detail: Record<string, any>;
+  played_at: number;
+};
+export type GameBreakdown = Record<string, { played: number; wins: number }>;
+
 export type Profile = {
   stats: Record<string, number>;
   equipped: Equipped;
   catalog: { title: CatalogItem[]; border: CatalogItem[]; effect: CatalogItem[] };
   is_admin?: boolean;
+  // vitrine
+  user?: PublicUser;
+  member_since?: number;
+  online?: boolean;
+  history?: HistoryEntry[];
+  breakdown?: GameBreakdown;
+  is_me?: boolean;
 };
 
 // user_id(str) -> cosmétiques à afficher sur son avatar
@@ -403,6 +425,16 @@ export function useSocial(loggedIn: boolean) {
     },
 
     profile,
+    // vitrine d'un autre joueur (ami / co-membre d'une table)
+    viewProfile: (userId: number) =>
+      new Promise<{ profile?: Profile; error?: string }>((resolve) => {
+        const socket = socketRef.current;
+        if (!socket?.connected) {
+          resolve({ error: "Pas de connexion au serveur." });
+          return;
+        }
+        socket.emit("profile_view", { user_id: userId }, (resp: any) => resolve(resp ?? {}));
+      }),
     // requête générique avec ack (renvoie toute la réponse) — pour l'admin
     ask: (event: string, data: object = {}) =>
       new Promise<any>((resolve) => {

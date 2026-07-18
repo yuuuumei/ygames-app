@@ -11,6 +11,7 @@ type Props = {
   onAccept: (userId: number) => Promise<string | null>;
   onDecline: (userId: number) => Promise<string | null>;
   onRemove: (userId: number) => Promise<string | null>;
+  onViewProfile: (userId: number) => void;
 };
 
 /** Sidebar d'amis : repliée (72px) par défaut, s'élargit au survol.
@@ -125,11 +126,19 @@ export default function FriendsRail(props: Props) {
               <div className="fs-label">En ligne — {online.length}</div>
               {online.map((f) => (
                 <div key={f.id} className="fs-row clickable">
-                  <div className="fs-avatar">
+                  <div
+                    className="fs-avatar fs-clicktarget"
+                    onClick={() => props.onViewProfile(f.id)}
+                    title="Voir le profil"
+                  >
                     <Avatar url={f.avatar_url} name={f.display_name} />
                     <span className="fs-dot" style={{ background: "var(--online)" }} />
                   </div>
-                  <div className="fs-info fs-reveal">
+                  <div
+                    className="fs-info fs-reveal fs-clicktarget"
+                    onClick={() => props.onViewProfile(f.id)}
+                    title="Voir le profil"
+                  >
                     <div className="fs-name">{f.display_name}</div>
                     <div className="fs-status" style={{ color: "var(--online)" }}>
                       En ligne
@@ -150,7 +159,12 @@ export default function FriendsRail(props: Props) {
             <>
               <div className="fs-label">Hors ligne — {offline.length}</div>
               {offline.map((f) => (
-                <div key={f.id} className="fs-row offline">
+                <div
+                  key={f.id}
+                  className="fs-row offline clickable fs-clicktarget"
+                  onClick={() => props.onViewProfile(f.id)}
+                  title="Voir le profil"
+                >
                   <div className="fs-avatar">
                     <Avatar url={f.avatar_url} name={f.display_name} />
                     <span className="fs-dot" style={{ background: "var(--txt-3)" }} />

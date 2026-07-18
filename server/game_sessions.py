@@ -118,19 +118,30 @@ def maybe_record_stats(code: str) -> bool:
 
     report = game.stats_report()  # player_id(str) -> faits
     host_id = session["host_id"]
+    game_id = session["game_id"]
     rows = []
+    history = []
     for uid in session["user_ids"]:
         facts = report.get(str(uid), {})
+        won = facts.get("won", False)
         rows.append({
             "user_id": uid,
-            "won": facts.get("won", False),
+            "won": won,
             "was_impostor": facts.get("was_impostor", False),
             "voted_correctly": facts.get("voted_correctly", False),
             "gave_clue": facts.get("gave_clue", False),
             "hosted": uid == host_id,
         })
+        # détail d'historique selon le jeu
+        detail = {"hosted": uid == host_id}
+        if game_id == "impostor":
+            detail["role"] = "impostor" if facts.get("was_impostor") else "civil"
+        history.append({
+            "user_id": uid, "game_id": game_id, "won": won, "detail": detail,
+        })
     if rows:
         db.record_game_stats(rows)
+        db.record_history(history)
     session["stats_saved"] = True
     return True
 

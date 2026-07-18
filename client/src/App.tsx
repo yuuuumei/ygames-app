@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import UpdateBanner from "./UpdateBanner";
-import { useSocial } from "./useSocial";
+import { useSocial, Profile } from "./useSocial";
 import LobbyScreen from "./LobbyScreen";
 import ImpostorScreen from "./ImpostorScreen";
 import QuizScreen from "./QuizScreen";
 import FriendsRail from "./FriendsRail";
 import LoginScreen from "./LoginScreen";
 import ProfileScreen from "./ProfileScreen";
+import ProfileShowcase from "./ProfileShowcase";
 import AdminScreen from "./AdminScreen";
 import SettingsScreen from "./SettingsScreen";
 import Splash from "./Splash";
@@ -43,7 +44,13 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [viewedProfile, setViewedProfile] = useState<Profile | null>(null);
   const social = useSocial(screen.kind === "home");
+
+  async function openProfile(userId: number) {
+    const resp = await social.viewProfile(userId);
+    if (resp.profile) setViewedProfile(resp.profile);
+  }
 
   useEffect(() => {
     getVersion().then(setVersion).catch(() => {});
@@ -98,8 +105,27 @@ function App() {
           setShowSettings={setShowSettings}
           adminOpen={adminOpen}
           setAdminOpen={setAdminOpen}
+          onViewProfile={openProfile}
         />
       </div>
+
+      {/* vitrine d'un autre joueur (overlay global) */}
+      {viewedProfile && (
+        <div
+          className="pv-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setViewedProfile(null);
+          }}
+        >
+          <div className="pv-modal">
+            <ProfileShowcase
+              profile={viewedProfile}
+              isMe={!!viewedProfile.is_me}
+              onClose={() => setViewedProfile(null)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* invitations reçues (overlay global, non bloquant) */}
       {screen.kind === "home" && social.invites.length > 0 && (
@@ -167,9 +193,10 @@ type BodyProps = {
   setShowSettings: (v: boolean) => void;
   adminOpen: boolean;
   setAdminOpen: (v: boolean) => void;
+  onViewProfile: (userId: number) => void;
 };
 
-function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen }: BodyProps) {
+function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen, onViewProfile }: BodyProps) {
   if (screen.kind === "loading") {
     return <Splash version={version} />;
   }
@@ -327,6 +354,7 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
         onLeave={social.leaveLobby}
         onChat={social.sendChat}
         onStartGame={social.startGame}
+        onViewProfile={onViewProfile}
       />
     );
   }
@@ -344,6 +372,7 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
       onOpenProfile={() => setShowProfile(true)}
       onOpenSettings={() => setShowSettings(true)}
       onLogout={onLogout}
+      onViewProfile={onViewProfile}
     />
   );
 }
@@ -358,6 +387,7 @@ function Launcher({
   onOpenProfile,
   onOpenSettings,
   onLogout,
+  onViewProfile,
 }: {
   user: User;
   social: ReturnType<typeof useSocial>;
@@ -366,6 +396,7 @@ function Launcher({
   onOpenProfile: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
+  onViewProfile: (userId: number) => void;
 }) {
   const [code, setCode] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -593,6 +624,7 @@ function Launcher({
         onAccept={social.acceptFriend}
         onDecline={social.declineFriend}
         onRemove={social.removeFriend}
+        onViewProfile={onViewProfile}
       />
     </div>
   );

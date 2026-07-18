@@ -639,15 +639,54 @@ def ws_game_end(_data=None):
 # ============================================================ profil (WS)
 
 
+def build_profile(uid: int, is_me: bool) -> dict | None:
+    """La vitrine d'un joueur : identité, stats, cosmétiques, historique."""
+    urow = db.get_user_by_id(uid)
+    if not urow:
+        return None
+    stats = db.get_stats(uid)
+    cosmetics = db.get_cosmetics(uid)
+    prof = profiles.full_profile(stats, cosmetics)
+    prof["user"] = public_user(urow)
+    prof["member_since"] = urow["created_at"]
+    prof["online"] = uid in online
+    prof["history"] = db.get_history(uid)
+    prof["breakdown"] = db.game_breakdown(uid)
+    prof["is_me"] = is_me
+    return prof
+
+
+def _can_view_profile(me_id: int, uid: int) -> bool:
+    if uid == me_id:
+        return True
+    if uid in db.get_friend_ids(me_id):
+        return True
+    lobby = lb.get(me_id)  # co-membres d'une même table
+    return bool(lobby and uid in lobby["members"])
+
+
 @socketio.on("profile_get")
 def ws_profile_get(_data=None):
     me = current_user()
     if not me:
         return {"error": "non authentifié"}
-    stats = db.get_stats(me["id"])
-    cosmetics = db.get_cosmetics(me["id"])
-    prof = profiles.full_profile(stats, cosmetics)
+    prof = build_profile(me["id"], is_me=True)
     prof["is_admin"] = is_admin(me)
+    return {"profile": prof}
+
+
+@socketio.on("profile_view")
+def ws_profile_view(data):
+    """La vitrine d'un AUTRE joueur (ami ou co-membre d'une table)."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    uid = int((data or {}).get("user_id", 0))
+    if not _can_view_profile(me["id"], uid):
+        return {"error": "Ce profil n'est pas accessible."}
+    prof = build_profile(uid, is_me=(uid == me["id"]))
+    if not prof:
+        return {"error": "Joueur introuvable."}
     return {"profile": prof}
 
 

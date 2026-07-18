@@ -5686,3 +5686,355 @@
   opacity: 0.6;
   animation: quizDot 1.2s ease-in-out infinite;
 }
+
+/* ============================================================
+   PROFIL — VITRINE (showcase), utilisée pour soi et les autres
+   ============================================================ */
+.pv {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pv-head {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px 14px;
+}
+.pv-h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--txt);
+  margin: 0;
+}
+.pv-customize {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--txt-2);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.pv-customize:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
+.pv-scroll {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 24px 28px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* --- bandeau identité --- */
+.pv-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 20px 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.pv-hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 90% at 50% -10%, color-mix(in srgb, var(--sig) 22%, transparent), transparent 60%);
+}
+.pv-hero-avatar {
+  position: relative;
+  z-index: 1;
+}
+.pv-online-dot {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--online);
+  border: 3px solid #0c0e15;
+}
+.pv-hero-name {
+  position: relative;
+  z-index: 1;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+}
+.pv-title {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1px solid;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.pv-hero-sub {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--txt-3);
+}
+
+/* --- tuiles de stats --- */
+.pv-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.pv-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 16px 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+.pv-tile.small {
+  padding: 12px 8px;
+}
+.pv-tile-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+}
+.pv-tile.small .pv-tile-value {
+  font-size: 21px;
+}
+.pv-tile-value.accent {
+  color: var(--sig);
+}
+.pv-tile-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--txt-3);
+  text-align: center;
+}
+
+/* --- sections --- */
+.pv-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pv-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--txt-3);
+}
+
+/* --- par jeu --- */
+.pv-games {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pv-game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+.pv-game-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.pv-game-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* --- trophées --- */
+.pv-trophy-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.pv-trophy-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pv-trophy-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt-2);
+}
+.pv-trophy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pv-chip {
+  padding: 5px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt-2);
+}
+.pv-chip.on {
+  color: #fff;
+  border: 1px solid;
+}
+
+/* --- historique --- */
+.pv-history {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pv-hist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+.pv-hist-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.pv-hist-body {
+  flex: 1;
+  min-width: 0;
+}
+.pv-hist-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.pv-hist-result {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.pv-hist-result.win {
+  color: #59e08c;
+  background: rgba(67, 209, 122, 0.12);
+}
+.pv-hist-result.loss {
+  color: #ff8a95;
+  background: rgba(255, 77, 94, 0.1);
+}
+
+/* --- actions (mon profil) --- */
+.pv-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 6px;
+}
+.pv-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--txt-2);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.pv-action.admin:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
+.pv-action.logout:hover {
+  border-color: rgba(255, 77, 94, 0.5);
+  color: #ff8a95;
+}
+
+/* --- overlay (vitrine d'un autre joueur) --- */
+.pv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  animation: fade 0.18s var(--ease) both;
+}
+.pv-modal {
+  width: min(600px, 100%);
+  height: min(82vh, 760px);
+  background: #0c0e15;
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: rise 0.25s var(--ease) both;
+}
+
+/* --- éléments cliquables (ouvrent un profil) --- */
+.fs-clicktarget {
+  cursor: pointer;
+}
+.tbl-seat.clickable {
+  cursor: pointer;
+}
+.tbl-seat.clickable:hover {
+  border-color: var(--line-2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 560px) {
+  .pv-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
