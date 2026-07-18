@@ -4114,3 +4114,43 @@
   color: #ff8a95;
   font-size: 12.5px;
 }
+.update-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.update-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.update-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-2), #12a8c4);
+  transition: width 0.2s var(--ease);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+}
+/* phase d'installation : barre indéterminée qui va-et-vient */
+.update-progress-fill.indet {
+  width: 40%;
+  animation: indet 1.1s ease-in-out infinite;
+}
+@keyframes indet {
+  0% {
+    margin-left: -40%;
+  }
+  100% {
+    margin-left: 100%;
+  }
+}
+.update-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-2);
+  min-width: 34px;
+  text-align: right;
+}
