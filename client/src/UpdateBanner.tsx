@@ -3,26 +3,25 @@ import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
 /**
- * Vérifie silencieusement au démarrage si une mise à jour est publiée
- * sur GitHub Releases. Si oui, affiche une bannière en bas de la fenêtre.
- * En dev (`npm run tauri dev`), le check échoue simplement en silence.
+ * Vérifie au démarrage si une mise à jour est publiée sur GitHub Releases.
+ * Si oui, affiche un dock discret en bas de la fenêtre. En dev, le check
+ * échoue silencieusement.
  */
 export default function UpdateBanner() {
   const [update, setUpdate] = useState<Update | null>(null);
   const [installing, setInstalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     check()
       .then((u) => {
         if (u) setUpdate(u);
       })
-      .catch(() => {
-        /* pas de réseau, ou build dev non signé : on ignore */
-      });
+      .catch(() => {});
   }, []);
 
-  if (!update) return null;
+  if (!update || dismissed) return null;
 
   async function install() {
     if (!update) return;
@@ -37,19 +36,38 @@ export default function UpdateBanner() {
   }
 
   return (
-    <div className="update-banner">
-      {error ? (
-        <span className="update-error">Échec de la mise à jour : {error}</span>
-      ) : (
-        <>
-          <span>
-            Mise à jour <strong>v{update.version}</strong> disponible
-          </span>
-          <button className="update-btn" onClick={install} disabled={installing}>
-            {installing ? "Installation…" : "Installer et redémarrer"}
-          </button>
-        </>
-      )}
+    <div className="update-dock">
+      <div className="update-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+          <path d="M12 3v12M7 10l5 5 5-5" />
+          <path d="M5 21h14" />
+        </svg>
+      </div>
+      <div className="update-info">
+        <div className="update-title-row">
+          <span className="update-title">Mise à jour disponible</span>
+          <span className="update-version">v{update.version}</span>
+        </div>
+        <div className="update-desc">
+          {error ? (
+            <span className="update-err">Échec : {error}</span>
+          ) : (
+            "Nouveautés et correctifs. Redémarre pour installer."
+          )}
+        </div>
+      </div>
+      <div className="update-actions">
+        <button className="update-later" onClick={() => setDismissed(true)} disabled={installing}>
+          Plus tard
+        </button>
+        <button className="update-restart" onClick={install} disabled={installing}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          {installing ? "Installation…" : "Redémarrer"}
+        </button>
+      </div>
     </div>
   );
 }

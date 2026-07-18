@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050609;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  ::selection{background:rgba(124,108,255,.35)}
+  a{color:#a99cff;text-decoration:none}
+  a:hover{color:#c3b9ff}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .mono{font-family:'JetBrains Mono',monospace}
+</style>
+</helmet>
+<div style="position:relative;width:1100px;min-height:720px;background:#0e1016;border:1px solid #ffffff16;border-radius:14px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6);font-family:'Manrope',sans-serif;color:#eef1f8;
+  --accent:#7c6cff;--accent-2:#22d3ee;--gold:#ffc24b;--online:#43d17a;--danger:#ff4d5e;--ease:cubic-bezier(.2,.8,.2,1)">
+
+  <!-- header -->
+  <div style="padding:32px 40px 26px;border-bottom:1px solid #ffffff0d;display:flex;align-items:center;justify-content:space-between;animation:fade .5s var(--ease) both">
+    <div style="display:flex;align-items:center;gap:14px">
+      <dc-import name="YMark" variant="app" size="{{ 44 }}" speed="{{ 7 }}" hint-size="44px,44px"></dc-import>
+      <div>
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:24px;letter-spacing:-.02em">yGAMES — Design System</div>
+        <div style="font-size:12.5px;color:#8b93a7;margin-top:2px">Handoff dev · React + CSS · dark only · fenêtre 1100×720 (min 900×600)</div>
+      </div>
+    </div>
+    <div class="mono" style="font-size:11px;color:#3a4152;letter-spacing:.14em">v1.0</div>
+  </div>
+
+  <div style="padding:32px 40px 44px;display:flex;flex-direction:column;gap:34px">
+
+    <!-- COLORS -->
+    <div style="animation:fade .5s var(--ease) both;animation-delay:.05s">
+      <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:16px">01 · Couleurs</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+        <sc-for list="{{ colors }}" as="c" hint-placeholder-count="18">
+          <div style="border-radius:11px;overflow:hidden;border:1px solid #ffffff0d;background:#0b0d13">
+            <div style="height:52px;background:{{ c.swatch }};border-bottom:1px solid #ffffff0d"></div>
+            <div style="padding:8px 9px">
+              <div style="font-size:11px;font-weight:700">{{ c.name }}</div>
+              <div class="mono" style="font-size:9.5px;color:#5f6982;margin-top:2px">{{ c.hex }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:14px;background:#0b0d13;border:1px solid #ffffff0d;border-radius:11px;padding:14px 16px">
+        <div class="mono" style="font-size:11.5px;line-height:1.85;color:#c3c9d6;white-space:pre">{{ colorTokens }}</div>
+      </div>
+    </div>
+
+    <!-- TYPE + SPACING -->
+    <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:22px">
+      <div style="animation:fade .5s var(--ease) both;animation-delay:.1s">
+        <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:16px">02 · Typographie</div>
+        <div style="background:#0b0d13;border:1px solid #ffffff0d;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px"><span style="font-family:'Space Grotesk';font-weight:700;font-size:13px;color:#a99cff">Space Grotesk</span><span style="font-size:11px;color:#5f6982">— logo, titres, noms de jeux, chiffres</span></div>
+            <div style="font-family:'Space Grotesk';font-weight:700;font-size:34px;letter-spacing:-.02em;line-height:1.05">L'imposteur est démasqué</div>
+          </div>
+          <div style="height:1px;background:#ffffff0d"></div>
+          <div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px"><span style="font-weight:800;font-size:13px;color:#59e08c">Manrope</span><span style="font-size:11px;color:#5f6982">— UI, corps, boutons, labels</span></div>
+            <div style="font-size:15px;color:#c3c9d6;line-height:1.5">Tout le monde reçoit un mot. Un seul en a un autre — et il ne le sait pas.</div>
+          </div>
+          <div style="height:1px;background:#ffffff0d"></div>
+          <div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px"><span class="mono" style="font-weight:700;font-size:13px;color:#22d3ee">JetBrains Mono</span><span style="font-size:11px;color:#5f6982">— codes de table, tags, versions</span></div>
+            <div class="mono" style="font-weight:700;font-size:22px;letter-spacing:.28em;color:#eef1f8">KLMR</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;background:#0b0d13;border:1px solid #ffffff0d;border-radius:11px;padding:13px 16px">
+          <div class="mono" style="font-size:11.5px;line-height:1.85;color:#c3c9d6;white-space:pre">{{ typeTokens }}</div>
+        </div>
+      </div>
+
+      <div style="animation:fade .5s var(--ease) both;animation-delay:.15s">
+        <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:16px">03 · Espacements & rayons</div>
+        <div style="background:#0b0d13;border:1px solid #ffffff0d;border-radius:12px;padding:20px 22px">
+          <div style="font-size:11px;color:#5f6982;font-weight:700;margin-bottom:12px">Échelle 4px</div>
+          <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:9px">
+              <span class="mono" style="font-size:11px;color:#8b93a7;width:64px">{{ s.name }}</span>
+              <div style="height:11px;border-radius:3px;background:linear-gradient(90deg,#7c6cff,#22d3ee);width:{{ s.w }}"></div>
+              <span class="mono" style="font-size:10.5px;color:#5f6982">{{ s.px }}</span>
+            </div>
+          </sc-for>
+          <div style="height:1px;background:#ffffff0d;margin:14px 0"></div>
+          <div style="font-size:11px;color:#5f6982;font-weight:700;margin-bottom:12px">Rayons</div>
+          <div style="display:flex;gap:12px;align-items:flex-end">
+            <sc-for list="{{ radii }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
+                <div style="width:52px;height:44px;background:#1a1e29;border:1px solid #ffffff14;border-top-left-radius:{{ r.v }};border-top-right-radius:{{ r.v }}"></div>
+                <span class="mono" style="font-size:10px;color:#5f6982">{{ r.name }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOTION -->
+    <div style="animation:fade .5s var(--ease) both;animation-delay:.2s">
+      <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:16px">04 · Principes de motion</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <sc-for list="{{ motion }}" as="m" hint-placeholder-count="4">
+          <div style="background:#0b0d13;border:1px solid #ffffff0d;border-radius:12px;padding:16px 18px">
+            <div style="width:34px;height:34px;border-radius:10px;background:{{ m.bg }};display:grid;place-items:center;margin-bottom:12px;color:{{ m.ic }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="{{ m.icon }}"/></svg></div>
+            <div style="font-weight:700;font-size:14px">{{ m.title }}</div>
+            <div style="font-size:12px;color:#8b93a7;margin-top:5px;line-height:1.5">{{ m.desc }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:14px;background:#0b0d13;border:1px solid #ffffff0d;border-radius:11px;padding:14px 16px">
+        <div class="mono" style="font-size:11.5px;line-height:1.85;color:#c3c9d6;white-space:pre">{{ motionTokens }}</div>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:flex-start;gap:10px;background:rgba(255,77,94,.06);border:1px solid rgba(255,77,94,.2);border-radius:11px;padding:13px 16px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff8a95" stroke-width="2.2" style="flex-shrink:0;margin-top:1px"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
+        <div style="font-size:13px;color:#c3c9d6;line-height:1.55"><span style="color:#ff8a95;font-weight:700">Le contraste, c'est la marque.</span> L'app au quotidien est posée (hover lift, cascades douces). Les moments de jeu explosent : révélation = tampon qui claque + confettis + flood de couleur, victoire/défaite dramatisées. Ne lisse jamais ces pics — c'est là que tes potes réagissent.</div>
+      </div>
+    </div>
+
+    <!-- PATTERNS + screens -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;animation:fade .5s var(--ease) both;animation-delay:.25s">
+      <div>
+        <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:16px">05 · Patterns clés</div>
+        <div style="background:#0b0d13;border:1px solid #ffffff0d;border-radius:12px;padding:8px 18px">
+          <sc-for list="{{ patterns }}" as="p" hint-placeholder-count="6">
+            <div style="display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #ffffff08">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#59e08c" stroke-width="2.4" style="flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>
+              <div><span style="font-weight:700;font-size:13.5px">{{ p.t }}</span> <span style="font-size:13px;color:#8b93a7">— {{ p.d }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:flex-start;gap:10px;background:rgba(124,108,255,.06);border:1px solid rgba(124,108,255,.2);border-radius:11px;padding:13px 16px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a99cff" stroke-width="2.2" style="flex-shrink:0;margin-top:1px"><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="10"/></svg>
+          <div style="font-size:12.5px;color:#c3c9d6;line-height:1.55">Vocabulaire : toujours <span style="color:#eef1f8;font-weight:700">table</span>, <span style="color:#eef1f8;font-weight:700">la bande</span>, <span style="color:#eef1f8;font-weight:700">groupe</span> — jamais « lobby ». Tutoiement partout.</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:16px">06 · Les écrans livrés</div>
+        <div style="background:#0b0d13;border:1px solid #ffffff0d;border-radius:12px;padding:8px 18px">
+          <sc-for list="{{ screens }}" as="s" hint-placeholder-count="8">
+            <a href="{{ s.href }}" style="display:flex;align-items:center;gap:11px;padding:10.5px 0;border-bottom:1px solid #ffffff08">
+              <span class="mono" style="font-size:11px;color:#5f6982;width:22px">{{ s.n }}</span>
+              <span style="font-weight:700;font-size:13.5px;color:#eef1f8;flex:1">{{ s.t }}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5f6982" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </a>
+          </sc-for>
+        </div>
+        <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700;margin:22px 0 16px">07 · Bonus — micro-UX & mises en scène</div>
+        <div style="background:#0b0d13;border:1px solid #ffffff0d;border-radius:12px;padding:8px 18px">
+          <sc-for list="{{ bonus }}" as="s" hint-placeholder-count="5">
+            <a href="{{ s.href }}" style="display:flex;align-items:center;gap:11px;padding:10.5px 0;border-bottom:1px solid #ffffff08">
+              <span class="mono" style="font-size:11px;color:#a99cff;width:22px">{{ s.n }}</span>
+              <span style="font-weight:700;font-size:13.5px;color:#eef1f8;flex:1">{{ s.t }}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5f6982" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </a>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      colors: [
+        { name: 'void', hex: '#050609', swatch: '#050609' },
+        { name: 'base', hex: '#0e1016', swatch: '#0e1016' },
+        { name: 'surface', hex: '#12151d', swatch: '#12151d' },
+        { name: 'card', hex: '#1a1e29', swatch: '#1a1e29' },
+        { name: 'elevated', hex: '#212635', swatch: '#212635' },
+        { name: 'panel', hex: '#0b0d13', swatch: '#0b0d13' },
+        { name: 'txt', hex: '#eef1f8', swatch: '#eef1f8' },
+        { name: 'txt-2', hex: '#98a1b6', swatch: '#98a1b6' },
+        { name: 'txt-3', hex: '#5f6982', swatch: '#5f6982' },
+        { name: 'line', hex: '#ffffff0d', swatch: 'rgba(255,255,255,.05)' },
+        { name: 'line-2', hex: '#ffffff1a', swatch: 'rgba(255,255,255,.1)' },
+        { name: 'discord', hex: '#5865f2', swatch: '#5865f2' },
+        { name: 'accent', hex: '#7c6cff', swatch: '#7c6cff' },
+        { name: 'accent-2', hex: '#22d3ee', swatch: '#22d3ee' },
+        { name: 'online', hex: '#43d17a', swatch: '#43d17a' },
+        { name: 'gold · host', hex: '#ffc24b', swatch: '#ffc24b' },
+        { name: 'danger · Impost.', hex: '#ff4d5e', swatch: '#ff4d5e' },
+        { name: 'signature', hex: 'gradient', swatch: 'linear-gradient(135deg,#7c6cff,#22d3ee)' },
+      ],
+      colorTokens: `--void:#050609;  --base:#0e1016;  --surface:#12151d;  --card:#1a1e29;  --elevated:#212635;  --panel:#0b0d13;
+--txt:#eef1f8;   --txt-2:#98a1b6; --txt-3:#5f6982;  --line:rgba(255,255,255,.05);  --line-2:rgba(255,255,255,.10);
+--accent:#7c6cff;  --accent-2:#22d3ee;  --online:#43d17a;  --gold:#ffc24b;  --danger:#ff4d5e;  --discord:#5865f2;
+--signature:linear-gradient(135deg,#7c6cff,#22d3ee);   /* logo, CTA principal, focus */`,
+      typeTokens: `--font-display:'Space Grotesk';  --font-ui:'Manrope';  --font-mono:'JetBrains Mono';
+/* échelle : 40/34 titres · 24/20/17 sous-titres · 15/14/13 corps · 12/11/10 labels — jamais < 10px */`,
+      spaces: [
+        { name: 'space-1', px: '4px', w: '4px' },
+        { name: 'space-2', px: '8px', w: '8px' },
+        { name: 'space-3', px: '12px', w: '12px' },
+        { name: 'space-4', px: '16px', w: '16px' },
+        { name: 'space-6', px: '24px', w: '24px' },
+        { name: 'space-8', px: '32px', w: '32px' },
+      ],
+      radii: [
+        { name: '8px · chip', v: '8px' },
+        { name: '12px · carte', v: '12px' },
+        { name: '16px · panneau', v: '16px' },
+        { name: '50% · avatar', v: '26px' },
+      ],
+      motion: [
+        { title: 'Au repos, ça respire', desc: 'Blobs qui dérivent, point « en ligne » qui pulse, sheen sur le CTA.', bg: 'rgba(124,108,255,.14)', ic: '#a99cff', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' },
+        { title: 'Hover = lift + glow', desc: 'translateY -4/-6px + halo de la couleur du jeu. Ease sortie.', bg: 'rgba(34,211,238,.12)', ic: '#22d3ee', icon: 'M12 19V5M5 12l7-7 7 7' },
+        { title: 'Press = spring', desc: 'Les boutons « poppent » (scale). Ressort court et net.', bg: 'rgba(67,209,122,.12)', ic: '#59e08c', icon: 'M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9' },
+        { title: 'Entrée en cascade', desc: 'Titre → héro → cartes → panneau, décalés de ~60ms.', bg: 'rgba(255,194,75,.12)', ic: '#ffc24b', icon: 'M4 6h16M4 12h10M4 18h7' },
+      ],
+      motionTokens: `--ease:cubic-bezier(.2,.8,.2,1);        /* mouvements posés : hover, apparitions, transitions */
+--spring:cubic-bezier(.34,1.56,.64,1);  /* press & pop : boutons, avatars, cartes qui vivent */
+/* durées : 160ms micro-interactions · 300ms cartes · 500-700ms entrées · 600ms+ mises en scène de jeu */`,
+      patterns: [
+        { t: 'Chrome de fenêtre custom', d: 'barre 38px, contrôles min/max/close, drag-region' },
+        { t: 'Avatars Discord ronds', d: 'fallback initiale sur dégradé perso, point statut (vert/gris)' },
+        { t: 'Couronne host', d: 'or #ffc24b, flottante au-dessus de l\'avatar' },
+        { t: 'Code de table', d: '4 lettres JetBrains Mono, copiable avec feedback « Copié »' },
+        { t: 'Une DA par jeu', d: 'app violet/cyan ; L\'Imposteur bascule en rouge « enquête »' },
+        { t: 'Déconnecté 💤', d: 'avatar à 40% d\'opacité, point gris, action exclure au survol' },
+      ],
+      screens: [
+        { n: '01', t: 'Splash de chargement', t2: '', href: 'Splash.dc.html' },
+        { n: '02', t: 'Login Discord', href: 'Login.dc.html' },
+        { n: '03', t: 'Accueil launcher', href: 'Accueil.dc.html' },
+        { n: '04', t: 'La table « On joue à quoi ? »', href: 'Table.dc.html' },
+        { n: '05', t: 'Écran de reconnexion', href: 'Reconnexion.dc.html' },
+        { n: '06', t: "L'Imposteur — 3 phases", href: 'Imposteur.dc.html' },
+        { n: '07', t: 'Bannières système', href: 'Bannieres.dc.html' },
+        { n: '08', t: 'Branding — logo & icône', href: 'Branding.dc.html' },
+      ],
+      bonus: [
+        { n: 'B1', t: "Le mot arrive — reveal individuel (flip 3D)", href: 'Le mot arrive.dc.html' },
+        { n: 'B2', t: "L'Imposteur — défaite (dans l'écran de jeu)", href: 'Imposteur.dc.html' },
+        { n: 'B3', t: 'États vides — bande / table / historique', href: 'Etats vides.dc.html' },
+        { n: 'B4', t: 'Teaser Spyfall & Quiz Culture', href: 'Teaser.dc.html' },
+        { n: 'B5', t: 'Charte son & micro-interactions', href: 'Son & Micro-interactions.dc.html' },
+        { n: 'B6', t: 'Logo E — système du jeton (anneau vivant)', href: 'Logo E — système.dc.html' },
+        { n: 'B7', t: 'Mon profil — perso (titres, bordures, effets)', href: 'Mon profil.dc.html' },
+        { n: 'B8', t: 'Passe de saison — battle pass gratuit', href: 'Passe de saison.dc.html' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050609;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  ::selection{background:rgba(124,108,255,.35)}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes blob{0%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.15)}100%{transform:translate(0,0) scale(1)}}
+  @keyframes blob2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-50px,30px) scale(1.2)}100%{transform:translate(0,0) scale(1)}}
+  @keyframes dot{0%,100%{box-shadow:0 0 0 0 rgba(67,209,122,.55)}70%{box-shadow:0 0 0 6px rgba(67,209,122,0)}}
+  @keyframes sheen{0%{transform:translateX(-120%)}60%,100%{transform:translateX(220%)}}
+  @keyframes crown{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(-8deg) translateY(-2px)}}
+  @keyframes seatpop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="position:relative;width:1100px;height:720px;background:#0e1016;border:1px solid #ffffff16;border-radius:14px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6);font-family:'Manrope',sans-serif;color:#eef1f8;
+  --accent:#7c6cff;--accent-2:#22d3ee;--gold:#ffc24b;--online:#43d17a;--danger:#ff4d5e;--discord:#5865f2;--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1)">
+
+  <!-- ambient -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0">
+    <div style="position:absolute;top:-120px;left:-80px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(124,108,255,.14),transparent 70%);filter:blur(24px);animation:blob 18s ease-in-out infinite"></div>
+    <div style="position:absolute;bottom:-160px;right:200px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.09),transparent 70%);filter:blur(24px);animation:blob2 22s ease-in-out infinite"></div>
+  </div>
+
+  <!-- titlebar -->
+  <div style="position:relative;z-index:2;height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #ffffff0d">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:26px;height:22px;display:grid;place-items:center;border-radius:6px;color:#6b7488;cursor:pointer" style-hover="background:#ffffff10;color:#eef1f8"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></div>
+      <dc-import name="YMark" variant="app" size="{{ 20 }}" speed="{{ 9 }}" glow="{{ false }}" hint-size="20px,20px"></dc-import>
+      <span style="font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:.18em;color:#8b93a7">YGAMES</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:26px;height:22px;display:grid;place-items:center;border-radius:6px;color:#6b7488" style-hover="background:#ffffff10;color:#eef1f8"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></div>
+      <div style="width:26px;height:22px;display:grid;place-items:center;border-radius:6px;color:#6b7488" style-hover="background:#ffffff10;color:#eef1f8"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></div>
+      <div style="width:26px;height:22px;display:grid;place-items:center;border-radius:6px;color:#6b7488" style-hover="background:#ff4d5e;color:#fff"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+    </div>
+  </div>
+
+  <!-- header: table identity + code -->
+  <div style="position:relative;z-index:2;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #ffffff0d">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#242a3a,#171b26);border:1px solid #ffffff14;display:grid;place-items:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#98a1b6" stroke-width="2"><path d="M3 11h18M6 15h.01M10 15h.01"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></div>
+      <div style="line-height:1.15">
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:18px;letter-spacing:-.01em">La table de Léo</div>
+        <div style="font-size:12px;color:#8b93a7">On joue à quoi ce soir ?</div>
+      </div>
+    </div>
+    <!-- code copiable -->
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5f6982;font-weight:700">Code de la table</span>
+      <div onClick="{{ copy }}" style="display:flex;align-items:center;gap:10px;background:#12151d;border:1px solid #ffffff14;border-radius:10px;padding:7px 8px 7px 14px;cursor:pointer;transition:border-color .18s var(--ease)" style-hover="border-color:#7c6cff66">
+        <span style="font-family:'JetBrains Mono';font-weight:700;font-size:19px;letter-spacing:.32em;color:#eef1f8;padding-left:2px">{{ code }}</span>
+        <div style="display:flex;align-items:center;gap:6px;background:{{ copyBg }};color:{{ copyColor }};font-size:12px;font-weight:700;padding:7px 11px;border-radius:7px;transition:all .18s var(--ease)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="{{ copyIcon }}"/></svg>{{ copyLabel }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- body -->
+  <div style="position:relative;z-index:2;display:flex;height:calc(720px - 38px - 64px)">
+
+    <!-- LEFT: la bande + invite -->
+    <div style="width:286px;border-right:1px solid #ffffff0d;background:#0b0d13;display:flex;flex-direction:column;animation:fade .5s var(--ease) both">
+      <div style="padding:18px 18px 12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:15px">La bande</div>
+        <div style="font-size:12px;color:#8b93a7"><span style="color:#eef1f8;font-weight:700">4</span> / 10</div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:0 12px 12px">
+        <sc-for list="{{ seats }}" as="p" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:12px;margin-bottom:6px;background:{{ p.rowBg }};border:1px solid {{ p.rowBorder }};transition:background .16s var(--ease);animation:seatpop .4s var(--spring) both" style-hover="background:#ffffff0a">
+            <div style="position:relative;width:40px;height:40px;flex-shrink:0">
+              <div style="width:40px;height:40px;border-radius:50%;background:{{ p.color }};display:grid;place-items:center;font-weight:700;font-size:16px;color:#fff;opacity:{{ p.avatarOpacity }}">{{ p.initial }}</div>
+              <sc-if value="{{ p.isHost }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:-9px;left:50%;margin-left:-9px;color:#ffc24b;animation:crown 2.6s ease-in-out infinite;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l4.5 4L12 5l4.5 6L21 7l-1.8 11H4.8L3 7Z"/></svg></div>
+              </sc-if>
+              <span style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:{{ p.dot }};border:2.5px solid #0b0d13"></span>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-weight:700;font-size:13.5px;color:{{ p.nameColor }}">{{ p.name }}</span>
+                <sc-if value="{{ p.isYou }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:700;color:#7c6cff;background:rgba(124,108,255,.14);padding:2px 6px;border-radius:5px">TOI</span></sc-if>
+              </div>
+              <div style="font-size:11.5px;color:{{ p.statusColor }};margin-top:1px">{{ p.status }}</div>
+            </div>
+            <sc-if value="{{ p.canKick }}" hint-placeholder-val="{{ false }}">
+              <div style="width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#5f6982;cursor:pointer;transition:all .16s var(--ease)" style-hover="background:#ff4d5e;color:#fff" title="Exclure"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <!-- empty seat -->
+        <div style="display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:12px;border:1px dashed #ffffff14;margin-top:4px">
+          <div style="width:40px;height:40px;border-radius:50%;border:1px dashed #2a3040;display:grid;place-items:center;color:#3a4152"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div style="font-size:12.5px;color:#5f6982">Places libres · 6</div>
+        </div>
+      </div>
+
+      <!-- inviter amis en ligne -->
+      <div style="border-top:1px solid #ffffff0d;padding:14px 16px">
+        <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:10px">Inviter — en ligne</div>
+        <sc-for list="{{ invitables }}" as="f" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 4px">
+            <div style="position:relative;width:32px;height:32px;flex-shrink:0">
+              <div style="width:32px;height:32px;border-radius:50%;background:{{ f.color }};display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff">{{ f.initial }}</div>
+              <span style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#43d17a;border:2px solid #0b0d13;animation:dot 2.4s ease-in-out infinite"></span>
+            </div>
+            <span style="flex:1;font-weight:600;font-size:13px">{{ f.name }}</span>
+            <div style="display:flex;align-items:center;gap:6px;background:#ffffff0d;color:#c3c9d6;font-size:12px;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer;transition:all .16s var(--ease)" style-hover="background:#7c6cff;color:#fff"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Inviter</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- CENTER: game selection -->
+    <div style="flex:1;display:flex;flex-direction:column;padding:22px 24px;overflow:hidden">
+      <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:14px;animation:rise .5s var(--ease) both">Choisis un jeu</div>
+
+      <!-- selected game hero -->
+      <div style="position:relative;flex:1;border-radius:16px;overflow:hidden;border:1px solid rgba(255,77,94,.4);animation:rise .5s var(--ease) both;animation-delay:.05s">
+        <div style="position:absolute;inset:0;background:radial-gradient(120% 130% at 78% -20%,rgba(255,77,94,.34),transparent 54%),radial-gradient(90% 90% at 8% 130%,rgba(124,108,255,.2),transparent 60%),linear-gradient(120deg,#170a0f,#0f0a14)"></div>
+        <div style="position:absolute;top:-60px;right:20px;font-family:'Space Grotesk';font-weight:700;font-size:280px;line-height:1;color:#ffffff06;user-select:none">?</div>
+        <div style="position:relative;height:100%;padding:26px 28px;display:flex;flex-direction:column;justify-content:space-between">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+              <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,77,94,.14);border:1px solid rgba(255,77,94,.4);color:#ff8a95;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:20px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Sélectionné</span>
+              <span style="font-size:12px;color:#98a1b6;font-weight:600">4 – 10 joueurs · ~15 min</span>
+            </div>
+            <div style="font-family:'Space Grotesk';font-weight:700;font-size:44px;line-height:1;letter-spacing:-.02em;text-shadow:0 4px 30px rgba(0,0,0,.5)">L'Imposteur</div>
+            <div style="font-size:14px;color:#c3c9d6;margin-top:12px;line-height:1.5;max-width:400px;text-wrap:pretty">Tout le monde reçoit un mot. Un seul en a un autre — et il ne le sait pas. Indices, doutes, vote.</div>
+          </div>
+
+          <!-- launch zone (host, ready) -->
+          <div style="display:flex;align-items:center;gap:16px">
+            <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ noop }}" style="position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:12px;background:linear-gradient(135deg,#ff4d5e,#e0344a);color:#fff;font-weight:700;font-size:17px;padding:16px 30px;border-radius:12px;cursor:pointer;box-shadow:0 12px 36px rgba(255,77,94,.45);transition:transform .18s var(--spring)" style-hover="transform:scale(1.03)" style-active="transform:scale(.98)">
+                <span style="position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-20deg);animation:sheen 4s ease-in-out infinite"></span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Lancer la partie
+              </div>
+              <span style="font-size:13px;color:#98a1b6;font-weight:500">4 joueurs prêts. C'est quand tu veux.</span>
+            </sc-if>
+            <!-- launch zone (host, waiting) -->
+            <sc-if value="{{ waiting }}" hint-placeholder-val="{{ false }}">
+              <div style="display:inline-flex;align-items:center;gap:12px;background:#ffffff0d;border:1px solid #ffffff14;color:#98a1b6;font-weight:700;font-size:16px;padding:16px 28px;border-radius:12px;cursor:not-allowed">
+                <span style="width:18px;height:18px;border-radius:50%;border:2.5px solid #5f6982;border-top-color:transparent;animation:spin 1s linear infinite"></span>Encore 2 joueurs…
+              </div>
+              <span style="font-size:13px;color:#8b93a7;font-weight:500">Invite tes potes ou partage le code.</span>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+
+      <!-- game switcher -->
+      <div style="display:flex;gap:12px;margin-top:16px;animation:rise .55s var(--ease) both;animation-delay:.1s">
+        <div style="flex:1;position:relative;border-radius:12px;border:1.5px solid rgba(255,77,94,.5);background:linear-gradient(130deg,#1a0e13,#140a10);padding:13px 15px;cursor:pointer">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'Space Grotesk';font-weight:700;font-size:15px">L'Imposteur</span>
+            <span style="width:8px;height:8px;border-radius:50%;background:#ff4d5e;box-shadow:0 0 10px #ff4d5e"></span>
+          </div>
+          <div style="font-size:11px;color:#8b93a7;margin-top:2px">Info cachée</div>
+        </div>
+        <div style="flex:1;position:relative;border-radius:12px;border:1px solid #ffffff0d;background:#0f1119;padding:13px 15px;opacity:.6">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'Space Grotesk';font-weight:700;font-size:15px;color:#cdd3e0">Spyfall</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5f6982" stroke-width="2.4"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style="font-size:11px;color:#5f6982;margin-top:2px">Bientôt</div>
+        </div>
+        <div style="flex:1;position:relative;border-radius:12px;border:1px solid #ffffff0d;background:#0f1119;padding:13px 15px;opacity:.6">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'Space Grotesk';font-weight:700;font-size:15px;color:#cdd3e0">Quiz Culture</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5f6982" stroke-width="2.4"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style="font-size:11px;color:#5f6982;margin-top:2px">Bientôt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: chat -->
+    <div style="width:300px;border-left:1px solid #ffffff0d;background:#0b0d13;display:flex;flex-direction:column;animation:fade .5s var(--ease) both">
+      <div style="padding:16px 18px 12px;border-bottom:1px solid #ffffff0d;display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#98a1b6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+        <span style="font-family:'Space Grotesk';font-weight:700;font-size:15px">Chat</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ chat }}" as="m" hint-placeholder-count="4">
+          <sc-if value="{{ m.isSystem }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;font-size:11.5px;color:#5f6982;padding:2px 0"><span style="color:#8b93a7">{{ m.text }}</span></div>
+          </sc-if>
+          <sc-if value="{{ m.isMsg }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:9px">
+              <div style="width:28px;height:28px;border-radius:50%;background:{{ m.color }};display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0">{{ m.initial }}</div>
+              <div style="min-width:0">
+                <div style="display:flex;align-items:baseline;gap:7px"><span style="font-weight:700;font-size:12.5px;color:{{ m.nameColor }}">{{ m.name }}</span><span style="font-size:10px;color:#4b5468">{{ m.time }}</span></div>
+                <div style="font-size:13px;color:#c3c9d6;line-height:1.45;margin-top:1px;text-wrap:pretty">{{ m.text }}</div>
+              </div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="padding:12px 14px;border-top:1px solid #ffffff0d">
+        <div style="display:flex;align-items:center;gap:8px;background:#12151d;border:1px solid #ffffff12;border-radius:10px;padding:10px 12px;transition:border-color .16s var(--ease)" style-hover="border-color:#7c6cff66">
+          <span style="flex:1;font-size:13px;color:#5f6982">Écris un message…</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5f6982" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- review-only state switcher -->
+  <div style="position:absolute;bottom:14px;left:calc(286px + (100% - 286px - 300px)/2);transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:4px;background:#0b0d13cc;backdrop-filter:blur(8px);border:1px solid #ffffff12;border-radius:10px;padding:4px">
+    <span style="font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#4b5468;font-weight:700;padding:0 8px">Aperçu</span>
+    <div onClick="{{ setReady }}" style="font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;color:{{ readyC }};background:{{ readyBg }};transition:all .15s var(--ease)">Prêt à lancer</div>
+    <div onClick="{{ setWaiting }}" style="font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;color:{{ waitC }};background:{{ waitBg }};transition:all .15s var(--ease)">En attente</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = { copied: false, ready: true };
+  copyT = null;
+  copy = () => {
+    this.setState({ copied: true });
+    clearTimeout(this.copyT);
+    this.copyT = setTimeout(() => this.setState({ copied: false }), 1600);
+  };
+  componentWillUnmount() { clearTimeout(this.copyT); }
+  renderVals() {
+    const copied = this.state.copied;
+    const ready = this.state.ready;
+    return {
+      code: 'KLMR',
+      noop: () => {},
+      copy: this.copy,
+      copyLabel: copied ? 'Copié' : 'Copier',
+      copyIcon: copied ? 'M20 6 9 17l-5-5' : 'M9 3h9a2 2 0 0 1 2 2v9M15 21H6a2 2 0 0 1-2-2V8',
+      copyBg: copied ? 'rgba(67,209,122,.16)' : '#ffffff0d',
+      copyColor: copied ? '#59e08c' : '#c3c9d6',
+      ready, waiting: !ready,
+      setReady: () => this.setState({ ready: true }),
+      setWaiting: () => this.setState({ ready: false }),
+      readyC: ready ? '#fff' : '#8b93a7', readyBg: ready ? '#7c6cff' : 'transparent',
+      waitC: !ready ? '#fff' : '#8b93a7', waitBg: !ready ? '#7c6cff' : 'transparent',
+      seats: [
+        { name: 'Léo', initial: 'L', color: 'linear-gradient(135deg,#5865f2,#7c6cff)', isHost: true, isYou: true, status: 'Hôte · en ligne', statusColor: '#43d17a', dot: '#43d17a', nameColor: '#eef1f8', avatarOpacity: 1, canKick: false, rowBg: 'rgba(124,108,255,.08)', rowBorder: 'rgba(124,108,255,.2)' },
+        { name: 'Maxime', initial: 'M', color: 'linear-gradient(135deg,#eb459e,#c0367f)', isHost: false, isYou: false, status: 'Prêt', statusColor: '#8b93a7', dot: '#43d17a', nameColor: '#eef1f8', avatarOpacity: 1, canKick: true, rowBg: 'transparent', rowBorder: 'transparent' },
+        { name: 'Sarah', initial: 'S', color: 'linear-gradient(135deg,#f0b429,#d99215)', isHost: false, isYou: false, status: 'Prête', statusColor: '#8b93a7', dot: '#43d17a', nameColor: '#eef1f8', avatarOpacity: 1, canKick: true, rowBg: 'transparent', rowBorder: 'transparent' },
+        { name: 'Théo', initial: 'T', color: 'linear-gradient(135deg,#43d17a,#2ba85d)', isHost: false, isYou: false, status: 'Déconnecté 💤', statusColor: '#5f6982', dot: '#5f6982', nameColor: '#8b93a7', avatarOpacity: .4, canKick: true, rowBg: 'transparent', rowBorder: 'transparent' },
+      ],
+      invitables: [
+        { name: 'Inès', initial: 'I', color: 'linear-gradient(135deg,#eb459e,#c0367f)' },
+        { name: 'Yanis', initial: 'Y', color: 'linear-gradient(135deg,#22d3ee,#0e9bb5)' },
+      ],
+      chat: [
+        { isSystem: true, isMsg: false, text: 'Léo a ouvert la table' },
+        { isMsg: true, name: 'Maxime', initial: 'M', color: 'linear-gradient(135deg,#eb459e,#c0367f)', nameColor: '#ff9dd0', time: '21:04', text: 'go go go, j\'ai révisé mon bluff' },
+        { isMsg: true, name: 'Sarah', initial: 'S', color: 'linear-gradient(135deg,#f0b429,#d99215)', nameColor: '#ffd479', time: '21:05', text: 'la dernière fois tu t\'es fait griller en 2 tours' },
+        { isSystem: true, isMsg: false, text: 'Théo s\'est déconnecté' },
+        { isMsg: true, name: 'Maxime', initial: 'M', color: 'linear-gradient(135deg,#eb459e,#c0367f)', nameColor: '#ff9dd0', time: '21:06', text: 'on l\'attend 2 min et on lance' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050609;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  ::selection{background:rgba(124,108,255,.35)}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes eqb{0%,100%{height:20%}50%{height:100%}}
+  @keyframes joinPop{0%,72%{transform:scale(0);opacity:0}82%{transform:scale(1.25);opacity:1}90%,100%{transform:scale(1);opacity:1}}
+  @keyframes toastCycle{0%,72%{opacity:0;transform:translateY(10px) scale(.9)}80%,94%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-6px)}}
+  @keyframes copyFlash{0%,60%,100%{background:#ffffff0d;color:#c3c9d6}70%,92%{background:rgba(67,209,122,.16);color:#59e08c}}
+  @keyframes dotPulse{0%,100%{box-shadow:0 0 0 0 rgba(67,209,122,.5)}70%{box-shadow:0 0 0 8px rgba(67,209,122,0)}}
+  @keyframes spotSweep{0%{transform:translateX(-60px)}50%{transform:translateX(60px)}100%{transform:translateX(-60px)}}
+  @keyframes press{0%,100%{transform:scale(1)}45%{transform:scale(.92)}70%{transform:scale(1.04)}}
+</style>
+</helmet>
+<div style="position:relative;width:1100px;min-height:720px;background:#0e1016;border:1px solid #ffffff16;border-radius:14px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6);font-family:'Manrope',sans-serif;color:#eef1f8;
+  --accent:#7c6cff;--accent-2:#22d3ee;--gold:#ffc24b;--online:#43d17a;--danger:#ff4d5e;--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1)">
+
+  <div style="padding:30px 36px 22px;border-bottom:1px solid #ffffff0d;animation:fade .5s var(--ease) both">
+    <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#5f6982;font-weight:700">Détails qui font la différence</div>
+    <div style="font-family:'Space Grotesk';font-weight:700;font-size:28px;letter-spacing:-.02em;margin-top:6px">Son & micro-interactions</div>
+    <div style="font-size:13px;color:#8b93a7;margin-top:4px">Référence pour l'implémentation. Les cartes son décrivent l'intention — à ton sound designer de produire les fichiers.</div>
+  </div>
+
+  <div style="padding:30px 36px 42px;display:flex;flex-direction:column;gap:30px">
+
+    <!-- SOUND -->
+    <div style="animation:fade .5s var(--ease) both;animation-delay:.05s">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700">01 · Charte sonore</span>
+        <span style="font-size:12px;color:#5f6982">— discrète au quotidien, marquée en jeu. Coupable en un clic, respecte le mode focus.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+        <sc-for list="{{ sounds }}" as="s" hint-placeholder-count="6">
+          <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:13px;padding:16px 17px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="width:34px;height:34px;border-radius:10px;background:{{ s.bg }};display:grid;place-items:center;color:{{ s.ic }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="{{ s.icon }}"/></svg></div>
+              <!-- mini equalizer -->
+              <div style="display:flex;align-items:flex-end;gap:2.5px;height:20px">
+                <span style="width:3px;background:{{ s.ic }};border-radius:2px;animation:eqb {{ s.d1 }} ease-in-out infinite"></span>
+                <span style="width:3px;background:{{ s.ic }};border-radius:2px;animation:eqb {{ s.d2 }} ease-in-out infinite"></span>
+                <span style="width:3px;background:{{ s.ic }};border-radius:2px;animation:eqb {{ s.d3 }} ease-in-out infinite"></span>
+                <span style="width:3px;background:{{ s.ic }};border-radius:2px;animation:eqb {{ s.d4 }} ease-in-out infinite"></span>
+              </div>
+            </div>
+            <div style="font-weight:700;font-size:14px">{{ s.t }}</div>
+            <div style="font-size:12px;color:#8b93a7;margin-top:4px;line-height:1.5;text-wrap:pretty">{{ s.d }}</div>
+            <div style="font-family:'JetBrains Mono';font-size:10.5px;color:{{ s.ic }};margin-top:10px;letter-spacing:.02em">{{ s.tag }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- MICRO-INTERACTIONS -->
+    <div style="animation:fade .5s var(--ease) both;animation-delay:.1s">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#5f6982;font-weight:700">02 · Micro-interactions</span>
+        <span style="font-size:12px;color:#5f6982">— live. Ces animations tournent en boucle pour la démo.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+
+        <!-- copy code -->
+        <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div style="height:80px;display:flex;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px;background:#12151d;border:1px solid #ffffff14;border-radius:10px;padding:7px 7px 7px 12px">
+              <span style="font-family:'JetBrains Mono';font-weight:700;font-size:16px;letter-spacing:.22em">KLMR</span>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:6px 9px;border-radius:7px;animation:copyFlash 3.5s ease-in-out infinite"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Copié</div>
+            </div>
+          </div>
+          <div style="text-align:center"><div style="font-weight:700;font-size:13.5px">Copie du code</div><div style="font-size:11.5px;color:#8b93a7;margin-top:3px">Icône ↔ « Copié » 1,5 s</div></div>
+        </div>
+
+        <!-- friend joins -->
+        <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div style="height:80px;display:flex;align-items:center;gap:-8px">
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5865f2,#7c6cff);display:grid;place-items:center;font-weight:700;font-size:16px;color:#fff;border:2px solid #0f1119">L</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#f0b429,#d99215);display:grid;place-items:center;font-weight:700;font-size:16px;color:#fff;border:2px solid #0f1119;margin-left:-8px">S</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#43d17a,#2ba85d);display:grid;place-items:center;font-weight:700;font-size:16px;color:#fff;border:2px solid #0f1119;margin-left:-8px;animation:joinPop 3s var(--spring) infinite">T</div>
+          </div>
+          <div style="text-align:center"><div style="font-weight:700;font-size:13.5px">Un pote rejoint</div><div style="font-size:11.5px;color:#8b93a7;margin-top:3px">Avatar qui « pop » (spring)</div></div>
+        </div>
+
+        <!-- online pulse -->
+        <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div style="height:80px;display:flex;align-items:center">
+            <div style="position:relative;width:48px;height:48px">
+              <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#eb459e,#c0367f);display:grid;place-items:center;font-weight:700;font-size:19px;color:#fff">M</div>
+              <span style="position:absolute;right:0;bottom:0;width:14px;height:14px;border-radius:50%;background:#43d17a;border:3px solid #0f1119;animation:dotPulse 2.2s ease-in-out infinite"></span>
+            </div>
+          </div>
+          <div style="text-align:center"><div style="font-weight:700;font-size:13.5px">Passage en ligne</div><div style="font-size:11.5px;color:#8b93a7;margin-top:3px">Point vert qui pulse</div></div>
+        </div>
+
+        <!-- press spring -->
+        <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:16px">
+          <div style="height:80px;display:flex;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#ff4d5e,#e0344a);color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border-radius:11px;box-shadow:0 8px 22px rgba(255,77,94,.4);animation:press 2.6s var(--spring) infinite"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Lancer</div>
+          </div>
+          <div style="text-align:center"><div style="font-weight:700;font-size:13.5px">Press = spring</div><div style="font-size:11.5px;color:#8b93a7;margin-top:3px">Scale 0.92 → 1.04 → 1</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- transitions note -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;animation:fade .5s var(--ease) both;animation-delay:.15s">
+      <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:14px;padding:20px 22px">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:14px">Transition entre phases</div>
+        <div style="position:relative;height:60px;border-radius:11px;background:#0a0709;overflow:hidden;border:1px solid #ffffff0d">
+          <div style="position:absolute;top:0;bottom:0;width:120px;left:50%;margin-left:-60px;background:radial-gradient(circle,rgba(255,77,94,.4),transparent 70%);animation:spotSweep 3s ease-in-out infinite"></div>
+          <div style="position:relative;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:13px;letter-spacing:.2em;color:#ff8a95">INDICES → VOTE → RÉVÉLATION</div>
+        </div>
+        <div style="font-size:12.5px;color:#8b93a7;margin-top:14px;line-height:1.55">Un fondu-spotlight (400 ms) balaie l'écran à chaque changement de phase : on sent qu'on bascule dans un nouveau moment, sans coupure brutale.</div>
+      </div>
+      <div style="background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff10;border-radius:14px;padding:20px 22px">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:14px">Toast global</div>
+        <div style="position:relative;height:60px;display:flex;align-items:center;justify-content:center">
+          <div style="display:flex;align-items:center;gap:9px;background:#1a1e29;border:1px solid #ffffff16;border-radius:11px;padding:10px 15px;box-shadow:0 12px 30px rgba(0,0,0,.4);animation:toastCycle 3.5s ease-in-out infinite">
+            <div style="width:22px;height:22px;border-radius:50%;background:rgba(67,209,122,.16);display:grid;place-items:center;color:#59e08c"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <span style="font-size:13px;font-weight:600">Invitation envoyée à Sarah</span>
+          </div>
+        </div>
+        <div style="font-size:12.5px;color:#8b93a7;margin-top:14px;line-height:1.55">Confirmations non-bloquantes (invitation envoyée, pote ajouté, code copié) : apparaissent en bas, disparaissent seules après 2,5 s.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:840}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      sounds: [
+        { t: 'Rejoindre une table', d: 'Un « clic » doux et grave. Sensation d\'entrer dans une pièce.', tag: 'ui · court · -18 LUFS', bg: 'rgba(124,108,255,.14)', ic: '#a99cff', icon: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3', d1: '1.1s', d2: '.7s', d3: '1.3s', d4: '.9s' },
+        { t: 'Le vote s\'ouvre', d: 'Tension : une nappe qui monte, un tic-tac feutré démarre.', tag: 'ambient · boucle · discret', bg: 'rgba(255,77,94,.14)', ic: '#ff8a95', icon: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z', d1: '.9s', d2: '1.4s', d3: '.6s', d4: '1.1s' },
+        { t: 'Ton tour de jouer', d: 'Deux notes claires qui montent. Te réveille sans agresser.', tag: 'ui · notif · doux', bg: 'rgba(255,194,75,.14)', ic: '#ffc24b', icon: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0', d1: '1.2s', d2: '.8s', d3: '1s', d4: '1.4s' },
+        { t: 'Révélation', d: 'Roulement, silence, puis un impact. LE moment sonore du jeu.', tag: 'stinger · marqué · full', bg: 'rgba(124,108,255,.14)', ic: '#a99cff', icon: 'M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z', d1: '.7s', d2: '1.3s', d3: '.9s', d4: '1.1s' },
+        { t: 'Victoire de la bande', d: 'Accord majeur ascendant, brillant, chaleureux. On exulte.', tag: 'jingle · 1,5 s · full', bg: 'rgba(67,209,122,.14)', ic: '#59e08c', icon: 'M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5Z', d1: '1s', d2: '.6s', d3: '1.4s', d4: '.8s' },
+        { t: 'L\'imposteur s\'échappe', d: 'Note qui descend, mineure, presque moqueuse. La douche froide.', tag: 'jingle · 1,5 s · full', bg: 'rgba(255,77,94,.14)', ic: '#ff8a95', icon: 'M18 6 6 18M6 6l12 12', d1: '1.3s', d2: '.9s', d3: '.7s', d4: '1.2s' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

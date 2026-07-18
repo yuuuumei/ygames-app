@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050609;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  ::selection{background:rgba(124,108,255,.35)}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes floatY2{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(-4deg)}}
+  @keyframes dotp{0%,100%{opacity:.3;transform:scale(.9)}50%{opacity:1;transform:scale(1)}}
+  @keyframes sweep{0%{transform:translateX(-140%)}60%,100%{transform:translateX(260%)}}
+  @keyframes orbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:.9}}
+</style>
+</helmet>
+<div style="position:relative;width:1100px;min-height:720px;background:#0e1016;border:1px solid #ffffff16;border-radius:14px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6);font-family:'Manrope',sans-serif;color:#eef1f8;
+  --accent:#7c6cff;--accent-2:#22d3ee;--gold:#ffc24b;--online:#43d17a;--danger:#ff4d5e;--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1)">
+
+  <div style="padding:30px 36px 22px;border-bottom:1px solid #ffffff0d;animation:fade .5s var(--ease) both">
+    <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#5f6982;font-weight:700">Micro-UX</div>
+    <div style="font-family:'Space Grotesk';font-weight:700;font-size:28px;letter-spacing:-.02em;margin-top:6px">États vides</div>
+    <div style="font-size:13px;color:#8b93a7;margin-top:4px">Aucun cul-de-sac gris. Chaque vide propose une action et garde le ton.</div>
+  </div>
+
+  <div style="padding:34px 36px 42px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+
+    <!-- 1. bande vide -->
+    <div style="display:flex;flex-direction:column;border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;overflow:hidden;animation:fade .5s var(--ease) both;animation-delay:.05s">
+      <div style="position:relative;height:200px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(80% 90% at 50% 0%,rgba(124,108,255,.12),transparent 65%)">
+        <!-- empty seats ring -->
+        <div style="position:relative;width:130px;height:130px">
+          <div style="position:absolute;inset:0;animation:orbit 30s linear infinite">
+            <div style="position:absolute;top:-4px;left:50%;margin-left:-19px;width:38px;height:38px;border-radius:50%;border:1.5px dashed #ffffff26;display:grid;place-items:center;color:#3a4152"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div style="position:absolute;bottom:6px;left:2px;width:34px;height:34px;border-radius:50%;border:1.5px dashed #ffffff1a"></div>
+            <div style="position:absolute;bottom:6px;right:2px;width:34px;height:34px;border-radius:50%;border:1.5px dashed #ffffff1a"></div>
+          </div>
+          <div style="position:absolute;inset:0;display:grid;place-items:center"><div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#5865f2,#7c6cff);display:grid;place-items:center;font-weight:700;font-size:22px;color:#fff;animation:floatY 5s ease-in-out infinite;box-shadow:0 10px 26px rgba(124,108,255,.4)">L</div></div>
+        </div>
+      </div>
+      <div style="padding:20px 22px 22px;flex:1;display:flex;flex-direction:column">
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:18px">Ta bande est vide</div>
+        <div style="font-size:13px;color:#8b93a7;margin-top:6px;line-height:1.55;flex:1;text-wrap:pretty">L'Imposteur, c'est nul en solo. Ajoute tes potes par leur pseudo Discord — ils apparaîtront ici dès qu'ils sont en ligne.</div>
+        <div style="display:flex;align-items:center;gap:9px;margin-top:16px;background:#7c6cff;color:#fff;font-weight:700;font-size:14px;height:44px;border-radius:11px;justify-content:center;cursor:pointer;transition:transform .16s var(--spring)" style-hover="transform:translateY(-2px)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Ajouter un pote</div>
+      </div>
+    </div>
+
+    <!-- 2. aucune table -->
+    <div style="display:flex;flex-direction:column;border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;overflow:hidden;animation:fade .5s var(--ease) both;animation-delay:.1s">
+      <div style="position:relative;height:200px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(80% 90% at 50% 0%,rgba(255,77,94,.1),transparent 65%)">
+        <div style="position:relative;width:104px;height:104px;border-radius:26px;background:radial-gradient(120% 120% at 30% 20%,#ff6572,#e0344a 60%,#9c1f30);display:grid;place-items:center;animation:floatY2 5.5s ease-in-out infinite;box-shadow:0 16px 40px rgba(255,77,94,.4);overflow:hidden">
+          <span style="font-family:'Space Grotesk';font-weight:700;font-size:56px;color:#fff">?</span>
+          <span style="position:absolute;top:0;width:26%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);animation:sweep 4s ease-in-out infinite"></span>
+        </div>
+      </div>
+      <div style="padding:20px 22px 22px;flex:1;display:flex;flex-direction:column">
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:18px">Aucune table ouverte</div>
+        <div style="font-size:13px;color:#8b93a7;margin-top:6px;line-height:1.55;flex:1;text-wrap:pretty">Personne ne joue là, tout de suite. Ouvre une table et balance le code dans le Discord — ça se remplit vite.</div>
+        <div style="display:flex;gap:9px;margin-top:16px">
+          <div style="flex:1;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#ff4d5e,#e0344a);color:#fff;font-weight:700;font-size:14px;height:44px;border-radius:11px;justify-content:center;cursor:pointer;transition:transform .16s var(--spring)" style-hover="transform:translateY(-2px)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Ouvrir</div>
+          <div style="display:flex;align-items:center;gap:7px;background:#ffffff0d;color:#c3c9d6;font-weight:700;font-size:14px;height:44px;padding:0 14px;border-radius:11px;cursor:pointer;transition:all .16s var(--ease)" style-hover="background:#ffffff16">Code</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. historique vide -->
+    <div style="display:flex;flex-direction:column;border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;overflow:hidden;animation:fade .5s var(--ease) both;animation-delay:.15s">
+      <div style="position:relative;height:200px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(80% 90% at 50% 0%,rgba(34,211,238,.1),transparent 65%)">
+        <div style="display:flex;flex-direction:column;gap:9px;opacity:.9">
+          <div style="display:flex;align-items:center;gap:9px;width:150px;background:#12151d;border:1px solid #ffffff10;border-radius:10px;padding:9px 11px;animation:pulse 2.4s ease-in-out infinite"><div style="width:22px;height:22px;border-radius:6px;background:#212635"></div><div style="flex:1;height:7px;border-radius:4px;background:#212635"></div></div>
+          <div style="display:flex;align-items:center;gap:9px;width:150px;background:#12151d;border:1px solid #ffffff10;border-radius:10px;padding:9px 11px;animation:pulse 2.4s ease-in-out .3s infinite"><div style="width:22px;height:22px;border-radius:6px;background:#1a1e29"></div><div style="flex:1;height:7px;border-radius:4px;background:#1a1e29"></div></div>
+          <div style="display:flex;align-items:center;gap:9px;width:150px;background:#12151d;border:1px solid #ffffff10;border-radius:10px;padding:9px 11px;opacity:.5;animation:pulse 2.4s ease-in-out .6s infinite"><div style="width:22px;height:22px;border-radius:6px;background:#161923"></div><div style="flex:1;height:7px;border-radius:4px;background:#161923"></div></div>
+        </div>
+      </div>
+      <div style="padding:20px 22px 22px;flex:1;display:flex;flex-direction:column">
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:18px">Pas encore d'historique</div>
+        <div style="font-size:13px;color:#8b93a7;margin-top:6px;line-height:1.55;flex:1;text-wrap:pretty">Tes parties, tes victoires et tes trahisons s'afficheront ici. La première manche est la plus dure à lancer — après, ça s'enchaîne.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:16px;color:#8b93a7;font-size:12.5px;font-weight:600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>Ta première partie t'attend</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}"></script>
+</body>
+</html>

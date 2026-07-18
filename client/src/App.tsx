@@ -2,10 +2,17 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import UpdateBanner from "./UpdateBanner";
-import { PLAYABLE_GAMES, useSocial } from "./useSocial";
-import FriendsPanel from "./FriendsPanel";
+import { useSocial } from "./useSocial";
 import LobbyScreen from "./LobbyScreen";
 import ImpostorScreen from "./ImpostorScreen";
+import FriendsRail from "./FriendsRail";
+import LoginScreen from "./LoginScreen";
+import Splash from "./Splash";
+import TitleBar from "./components/TitleBar";
+import YMark from "./components/YMark";
+import Avatar from "./components/Avatar";
+import "./theme.css";
+import "./_legacy.css";
 import "./App.css";
 
 type User = {
@@ -16,17 +23,15 @@ type User = {
   avatar_url: string | null;
 };
 
-// Les 3 écrans possibles du shell pour l'instant.
 type Screen =
-  | { kind: "loading" }              // démarrage : on vérifie le keychain
-  | { kind: "login"; error?: string } // pas de session → bouton Discord
-  | { kind: "home"; user: User };     // connecté → accueil
+  | { kind: "loading" }
+  | { kind: "login"; error?: string }
+  | { kind: "home"; user: User };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState("");
-  // Jeu cliqué depuis l'accueil — mis en avant sur l'écran de groupe.
   const [pickedGame, setPickedGame] = useState<string | null>(null);
   const social = useSocial(screen.kind === "home");
 
@@ -34,12 +39,9 @@ function App() {
     getVersion().then(setVersion).catch(() => {});
   }, []);
 
-  // Au démarrage : auto-login si un token valide dort dans le keychain.
   useEffect(() => {
     invoke<User | null>("get_session")
-      .then((user) =>
-        setScreen(user ? { kind: "home", user } : { kind: "login" }),
-      )
+      .then((user) => setScreen(user ? { kind: "home", user } : { kind: "login" }))
       .catch((err) => setScreen({ kind: "login", error: String(err) }));
   }, []);
 
@@ -60,239 +62,456 @@ function App() {
     setScreen({ kind: "login" });
   }
 
+  function handleCancelLogin() {
+    // On repasse l'UI au repos ; le flow Rust en cours sera simplement ignoré.
+    setBusy(false);
+  }
+
+  return (
+    <div className="app-shell">
+      <div className="ambient" />
+      <TitleBar />
+      <div className="content">
+        <Body
+          screen={screen}
+          busy={busy}
+          version={version}
+          social={social}
+          pickedGame={pickedGame}
+          setPickedGame={setPickedGame}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onCancelLogin={handleCancelLogin}
+        />
+      </div>
+
+      {/* invitations reçues (overlay global, non bloquant) */}
+      {screen.kind === "home" && social.invites.length > 0 && (
+        <div className="invites-stack">
+          {social.invites.map((inv) => (
+            <div key={inv.code} className="invite-toast">
+              <div className="invite-toast-inner">
+                <div className="invite-toast-top">
+                  <div className="invite-toast-avatar">
+                    <Avatar url={inv.from.avatar_url} name={inv.from.display_name} />
+                    <span className="invite-toast-dot" />
+                  </div>
+                  <div className="invite-toast-text">
+                    <div className="invite-toast-line">
+                      <strong>{inv.from.display_name}</strong>{" "}
+                      <span className="muted">t'invite à sa table</span>
+                    </div>
+                    <div className="invite-toast-meta">
+                      <span className="invite-toast-game">
+                        <span />
+                        L'Imposteur
+                      </span>
+                      <span className="invite-toast-sep" />
+                      <span className="invite-toast-code">{inv.code}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="invite-toast-actions">
+                  <button className="invite-join" onClick={() => social.joinLobby(inv.code)}>
+                    <span className="hero-cta-sheen" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                    Rejoindre
+                  </button>
+                  <button className="invite-ignore" onClick={() => social.dismissInvite(inv.code)}>
+                    Ignorer
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <UpdateBanner />
+    </div>
+  );
+}
+
+type BodyProps = {
+  screen: Screen;
+  busy: boolean;
+  version: string;
+  social: ReturnType<typeof useSocial>;
+  pickedGame: string | null;
+  setPickedGame: (id: string | null) => void;
+  onLogin: () => void;
+  onLogout: () => void;
+  onCancelLogin: () => void;
+};
+
+function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin }: BodyProps) {
   if (screen.kind === "loading") {
-    return (
-      <main className="screen">
-        <p className="muted">Chargement…</p>
-      </main>
-    );
+    return <Splash version={version} />;
   }
 
   if (screen.kind === "login") {
     return (
-      <main className="screen">
-        <UpdateBanner />
-        <div className="card">
-          <h1 className="brand">
-            y<span className="brand-accent">GAMES</span>
-          </h1>
-          <p className="tagline">Le salon de jeux, entre potes.</p>
-
-          <button className="discord-btn" onClick={handleLogin} disabled={busy}>
-            <svg className="discord-icon" viewBox="0 0 127.14 96.36" fill="currentColor" aria-hidden="true">
-              <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
-            </svg>
-            {busy ? "En attente de Discord…" : "Se connecter avec Discord"}
-          </button>
-
-          {busy && (
-            <p className="muted small">
-              Autorise yGAMES dans l'onglet qui vient de s'ouvrir.
-            </p>
-          )}
-          {screen.error && <p className="error">{screen.error}</p>}
-
-          <p className="version">yGAMES v{version} — Phase 2</p>
-        </div>
-      </main>
+      <LoginScreen
+        busy={busy}
+        error={screen.error}
+        version={version}
+        onLogin={onLogin}
+        onCancel={onCancelLogin}
+      />
     );
   }
 
-  // ------- connecté : reconnexion, lobby ou accueil -------
   const { user } = screen;
 
-  // Un lobby nous attend (retour dans l'app) : on propose, on n'impose pas.
+  // Partie en cours (styles legacy — refonte à la tâche Imposteur).
+  if (social.lobby && social.gameView) {
+    return (
+      <ImpostorScreen
+        view={social.gameView}
+        myPlayerId={String(user.id)}
+        isHost={social.lobby.host_id === user.id}
+        code={social.lobby.code}
+        onAction={social.gameAction}
+        onEnd={social.endGame}
+      />
+    );
+  }
+
+  // Reconnexion proposée : on propose, on n'impose pas.
   if (social.pendingLobby && !social.lobby) {
     const pending = social.pendingLobby;
+    const host = pending.members.find((m) => m.id === pending.host_id);
+    const present = pending.members.filter((m) => m.connected).length;
     return (
-      <main className="screen">
-        <UpdateBanner />
-        <div className="card">
-          <p className="muted">Ta table t'attend</p>
-          <p className="pending-code">{pending.code}</p>
-          <p className="muted small">
-            {pending.members.map((m) => m.display_name).join(", ")}
-          </p>
-          <button
-            className="discord-btn reconnect-btn"
-            onClick={() => social.joinLobby(pending.code)}
-          >
-            Se reconnecter
+      <div className="reconnect">
+        <div className="bg-grid" />
+        <div className="reconnect-card">
+          <div className="reconnect-badge">
+            <span className="reconnect-ping">
+              <span />
+              <span />
+            </span>
+            Partie en cours
+          </div>
+
+          <div className="reconnect-emblem">?</div>
+
+          <div className="reconnect-titles">
+            <div className="reconnect-title">Ta table t'attend</div>
+            <div className="reconnect-sub">
+              Tu as quitté en pleine partie de <strong>L'Imposteur</strong>.
+              <br />
+              La bande joue encore — reviens vite.
+            </div>
+          </div>
+
+          <div className="reconnect-meta">
+            <div className="tbl-emblem" style={{ width: 44, height: 44 }}>
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#98a1b6" strokeWidth="2">
+                <path d="M3 11h18M6 15h.01M10 15h.01" />
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>La table de {host?.display_name ?? "…"}</div>
+              <div className="reconnect-meta-sub">
+                <span className="mono">{pending.code}</span>
+                <span className="reconnect-meta-dot" />
+                <span className="muted small">
+                  <span style={{ color: "var(--online)", fontWeight: 700 }}>{present}</span> présent{present > 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+            <div className="reconnect-avatars">
+              {pending.members.slice(0, 4).map((m) => (
+                <Avatar key={m.id} url={m.avatar_url} name={m.display_name} size={30} className="reconnect-mini" />
+              ))}
+            </div>
+          </div>
+
+          <button className="reconnect-btn" onClick={() => social.joinLobby(pending.code)}>
+            <span className="hero-cta-sheen" />
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Me reconnecter
           </button>
-          <button className="ghost-btn" onClick={social.leaveLobby}>
+          <button className="reconnect-leave" onClick={social.leaveLobby}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="m16 17 5-5-5-5M21 12H9" />
+            </svg>
             Quitter la table
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
-  // Partie en cours : l'écran de jeu prend toute la place.
-  if (social.lobby && social.gameView) {
-    return (
-      <main className="screen screen-top">
-        <UpdateBanner />
-        <ImpostorScreen
-          view={social.gameView}
-          myPlayerId={String(user.id)}
-          isHost={social.lobby.host_id === user.id}
-          onAction={social.gameAction}
-          onEnd={social.endGame}
-        />
-      </main>
-    );
-  }
-
+  // Table (styles legacy — refonte à la tâche Table).
   if (social.lobby) {
     return (
-      <main className="screen screen-top">
-        <UpdateBanner />
-        <LobbyScreen
-          lobby={social.lobby}
-          meId={user.id}
-          friends={social.friends}
-          games={social.games}
-          initialGameId={pickedGame}
-          onInvite={social.inviteToLobby}
-          onKick={social.kickFromLobby}
-          onLeave={social.leaveLobby}
-          onChat={social.sendChat}
-          onStartGame={social.startGame}
-        />
-      </main>
+      <LobbyScreen
+        lobby={social.lobby}
+        meId={user.id}
+        friends={social.friends}
+        games={social.games}
+        initialGameId={pickedGame}
+        onInvite={social.inviteToLobby}
+        onKick={social.kickFromLobby}
+        onLeave={social.leaveLobby}
+        onChat={social.sendChat}
+        onStartGame={social.startGame}
+      />
     );
   }
 
+  // ----- ACCUEIL LAUNCHER (nouveau design) -----
   return (
-    <main className="screen screen-top">
-      <UpdateBanner />
-
-      {social.invites.map((inv) => (
-        <div key={inv.code} className="invite-banner">
-          <span>
-            🎮 <strong>{inv.from.display_name}</strong> t'invite dans son lobby
-          </span>
-          <button
-            className="add-btn"
-            onClick={() => social.joinLobby(inv.code)}
-          >
-            Rejoindre
-          </button>
-          <button
-            className="mini-btn no ghost"
-            onClick={() => social.dismissInvite(inv.code)}
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-
-      <div className="launcher">
-        <header className="launcher-header">
-          <div className="launcher-me">
-            {user.avatar_url ? (
-              <img className="online-avatar" src={user.avatar_url} alt="" />
-            ) : (
-              <span className="online-avatar online-avatar-fallback">
-                {user.display_name.slice(0, 1).toUpperCase()}
-              </span>
-            )}
-            <div>
-              <div className="launcher-name">{user.display_name}</div>
-              <div className="muted small">
-                <span className={social.connected ? "dot dot-on" : "dot dot-off"} />
-                {social.connected ? "En ligne" : "Reconnexion…"}
-              </div>
-            </div>
-          </div>
-          <div className="brand brand-small">
-            y<span className="brand-accent">GAMES</span>
-          </div>
-          <button className="ghost-btn" onClick={handleLogout}>
-            Se déconnecter
-          </button>
-        </header>
-
-        <div className="launcher-body">
-          <section className="launcher-main">
-            <h2 className="online-title">Jouer</h2>
-            <div className="launcher-grid">
-              {social.games.map((g) => (
-                <button
-                  key={g.id}
-                  className="game-card-lg"
-                  disabled={!PLAYABLE_GAMES.has(g.id) || !social.connected}
-                  title={g.description}
-                  onClick={async () => {
-                    setPickedGame(g.id);
-                    await social.createLobby();
-                  }}
-                >
-                  <span className="game-icon-lg">{g.icon}</span>
-                  <span className="game-name">{g.name}</span>
-                  <span className="muted small">
-                    {PLAYABLE_GAMES.has(g.id)
-                      ? `${g.min_players}–${g.max_players} joueurs`
-                      : "bientôt"}
-                  </span>
-                </button>
-              ))}
-              {social.games.length === 0 && (
-                <p className="muted small">Connexion au serveur…</p>
-              )}
-            </div>
-            <p className="muted small launcher-hint">
-              Choisis un jeu : ça ouvre une table, tu invites, vous enchaînez
-              les parties sans vous disperser.
-            </p>
-            <JoinByCode onJoin={social.joinLobby} />
-          </section>
-
-          <aside className="launcher-side">
-            <FriendsPanel
-              friends={social.friends}
-              incoming={social.incoming}
-              outgoing={social.outgoing}
-              onAdd={social.addFriend}
-              onAccept={social.acceptFriend}
-              onDecline={social.declineFriend}
-              onRemove={social.removeFriend}
-            />
-          </aside>
-        </div>
-
-        <p className="version">yGAMES v{version}</p>
-      </div>
-    </main>
+    <Launcher
+      user={user}
+      social={social}
+      version={version}
+      onPickGame={async (id) => {
+        setPickedGame(id);
+        await social.createLobby();
+      }}
+      onLogout={onLogout}
+    />
   );
 }
 
-/** Rejoindre la table d'un pote avec son code. */
-function JoinByCode(props: { onJoin: (code: string) => Promise<string | null> }) {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+/* ============================ LAUNCHER ============================ */
 
-  async function join(e: React.FormEvent) {
+function Launcher({
+  user,
+  social,
+  version,
+  onPickGame,
+  onLogout,
+}: {
+  user: User;
+  social: ReturnType<typeof useSocial>;
+  version: string;
+  onPickGame: (id: string) => void;
+  onLogout: () => void;
+}) {
+  const [code, setCode] = useState("");
+  const impostor = social.games.find((g) => g.id === "impostor");
+  const onlineCount = social.friends.filter((f) => f.online).length;
+
+  async function joinByCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!code.trim()) return;
-    setError(await props.onJoin(code.trim()));
+    if (code.trim().length < 4) return;
+    await social.joinLobby(code.trim());
   }
 
   return (
-    <form className="add-friend join-code" onSubmit={join}>
-      <input
-        className="add-input code-input"
-        value={code}
-        onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
-        placeholder="CODE"
-        maxLength={4}
-        spellCheck={false}
-      />
-      <button className="add-btn" disabled={code.trim().length < 4}>
-        Rejoindre une table
-      </button>
-      {error && <span className="error small">{error}</span>}
-    </form>
+    <>
+      {/* header */}
+      <div className="launcher-header">
+        <div className="brand-block">
+          <YMark variant="app" size={40} speed={7} />
+          <div>
+            <div className="brand-word">yGAMES</div>
+            <div className="brand-sub">Soirées entre potes</div>
+          </div>
+        </div>
+
+        <div className="header-right">
+          <form className="joincode" onSubmit={joinByCode}>
+            <span className="joincode-label">Rejoindre</span>
+            <input
+              className="joincode-input"
+              value={code}
+              onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
+              placeholder="CODE"
+              maxLength={4}
+              spellCheck={false}
+            />
+            <button className="joincode-go" disabled={code.trim().length < 4} title="Rejoindre">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          </form>
+
+          <div className="header-sep" />
+
+          <button className="profile-chip" onClick={onLogout} title="Se déconnecter">
+            <div className="profile-avatar-wrap">
+              <Avatar url={user.avatar_url} name={user.display_name} size={36} />
+              <span
+                className="profile-status-dot"
+                style={{ background: social.connected ? "var(--online)" : "var(--danger)" }}
+              />
+            </div>
+            <div className="profile-text">
+              <div className="profile-name">{user.display_name}</div>
+              <div className="profile-state" style={{ color: social.connected ? "var(--online)" : "var(--danger)" }}>
+                {social.connected ? "En ligne" : "Reconnexion…"}
+              </div>
+            </div>
+            <svg className="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* corps : main + rail */}
+      <div className="launcher-body">
+        <div className="launcher-main">
+          <div className="launcher-greet">
+            <h1>Salut {user.display_name.split(" ")[0]}.</h1>
+            <p>On joue à quoi ce soir ?</p>
+          </div>
+
+          {/* barre de jeux (raccourcis) */}
+          <div className="games-bar">
+            <span className="games-bar-label">Jeux</span>
+            <div className="games-bar-sep" />
+            <button
+              className="gt-icon imposteur"
+              title="L'Imposteur"
+              disabled={!social.connected}
+              onClick={() => onPickGame("impostor")}
+            >
+              <span className="gt-qmark">?</span>
+              <span className="gt-dot" />
+            </button>
+            <div className="gt-icon locked" title="Spyfall — bientôt">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <line x1="6" y1="11" x2="10" y2="11" />
+                <line x1="8" y1="9" x2="8" y2="13" />
+                <line x1="15" y1="12" x2="15.01" y2="12" />
+                <line x1="18" y1="10" x2="18.01" y2="10" />
+                <rect x="2" y="6" width="20" height="12" rx="4" />
+              </svg>
+              <span className="gt-lock">
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="3">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              </span>
+            </div>
+            <div className="gt-icon locked" title="Quiz Culture — bientôt">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
+                <path d="M12 17h.01" />
+              </svg>
+              <span className="gt-lock">
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="3">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              </span>
+            </div>
+            <div className="games-bar-spacer" />
+            <span className="games-bar-count">2 à venir</span>
+          </div>
+
+          {/* hero : L'Imposteur */}
+          <button
+            className="hero"
+            disabled={!social.connected}
+            onClick={() => onPickGame("impostor")}
+          >
+            <div className="hero-bg" />
+            <div className="hero-watermark">?</div>
+            <div className="hero-scrim" />
+            <div className="hero-content">
+              <div className="hero-top">
+                <span className="badge-live">
+                  <span />
+                  Jouable
+                </span>
+                <span className="muted small" style={{ fontWeight: 600 }}>
+                  {impostor ? `${impostor.min_players} – ${impostor.max_players} joueurs` : "4 – 10 joueurs"} · ~15 min
+                </span>
+              </div>
+              <div>
+                <div className="hero-kicker">Jeu à info cachée</div>
+                <div className="hero-title">L'Imposteur</div>
+                <div className="hero-desc">
+                  Tout le monde reçoit un mot. Un seul en a un autre — et il ne le sait pas. Indices,
+                  doutes, vote. Démasque le menteur.
+                </div>
+                <div className="hero-cta-row">
+                  <span className="hero-cta">
+                    <span className="hero-cta-sheen" />
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Ouvrir une table
+                  </span>
+                  <span className="muted small" style={{ fontWeight: 500 }}>
+                    {onlineCount > 0
+                      ? `${onlineCount} pote${onlineCount > 1 ? "s" : ""} en ligne`
+                      : "Invite tes potes à rejoindre"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </button>
+
+          {/* rangée bientôt */}
+          <div className="soon-row">
+            <SoonCard
+              name="Spyfall"
+              desc="Un espion, un lieu secret, des questions qui piègent."
+              glow="radial-gradient(80% 100% at 85% 0%, rgba(34,211,238,.14), transparent 60%)"
+              delay="0.12s"
+            />
+            <SoonCard
+              name="Quiz Culture"
+              desc="Le buzzer le plus rapide de la bande gagne."
+              glow="radial-gradient(80% 100% at 85% 0%, rgba(255,194,75,.12), transparent 60%)"
+              delay="0.18s"
+            />
+          </div>
+
+          <p className="version">yGAMES v{version}</p>
+        </div>
+
+        <FriendsRail
+          friends={social.friends}
+          incoming={social.incoming}
+          outgoing={social.outgoing}
+          onAdd={social.addFriend}
+          onAccept={social.acceptFriend}
+          onDecline={social.declineFriend}
+          onRemove={social.removeFriend}
+        />
+      </div>
+    </>
+  );
+}
+
+function SoonCard({ name, desc, glow, delay }: { name: string; desc: string; glow: string; delay: string }) {
+  return (
+    <div className="soon-card" style={{ animationDelay: delay }}>
+      <div className="soon-glow" style={{ background: glow }} />
+      <div className="soon-content">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span className="badge-soon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+              <rect x="3" y="11" width="18" height="10" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Bientôt
+          </span>
+        </div>
+        <div>
+          <div className="soon-name">{name}</div>
+          <div className="soon-desc">{desc}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 

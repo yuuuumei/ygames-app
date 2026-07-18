@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050609;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  ::selection{background:rgba(124,108,255,.35)}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="position:relative;width:1100px;min-height:720px;background:#0e1016;border:1px solid #ffffff16;border-radius:14px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6);font-family:'Manrope',sans-serif;color:#eef1f8;
+  --accent:#7c6cff;--accent-2:#22d3ee;--gold:#ffc24b;--online:#43d17a;--ease:cubic-bezier(.2,.8,.2,1)">
+
+  <div style="padding:30px 36px 22px;border-bottom:1px solid #ffffff0d;display:flex;align-items:center;justify-content:space-between;animation:fade .5s var(--ease) both">
+    <div>
+      <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#5f6982;font-weight:700">Direction retenue · E</div>
+      <div style="font-family:'Space Grotesk';font-weight:700;font-size:28px;letter-spacing:-.02em;margin-top:6px">Le jeton — système de logo</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:13px">
+      <div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center;box-shadow:0 10px 26px rgba(124,108,255,.4)"><div style="width:41px;height:41px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:24px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+      <span style="font-family:'Space Grotesk';font-weight:700;font-size:26px;letter-spacing:-.02em">yGAMES</span>
+    </div>
+  </div>
+
+  <div style="padding:28px 36px 40px;display:flex;flex-direction:column;gap:24px">
+
+    <!-- ROW 1: mark construction + lockups -->
+    <div style="display:grid;grid-template-columns:1fr 1.35fr;gap:18px">
+      <!-- construction -->
+      <div style="border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;padding:24px;animation:fade .5s var(--ease) both;animation-delay:.04s">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:20px">Le mark</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:24px">
+          <div style="position:relative;width:120px;height:120px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center;box-shadow:0 16px 40px rgba(124,108,255,.45)"><div style="width:90px;height:90px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:54px;color:#fff;transform:translateY(-2px)">y</span></div></div>
+          <div style="position:relative;width:120px;height:120px">
+            <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);opacity:.25"></div>
+            <div style="position:absolute;inset:15px;border-radius:50%;border:1px dashed #ffffff30"></div>
+            <div style="position:absolute;inset:0;border-radius:50%;border:1px dashed #ffffff40"></div>
+            <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#ffffff20"></div>
+            <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:#ffffff20"></div>
+            <div style="position:absolute;inset:0;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:54px;color:#ffffff40;transform:translateY(-2px)">y</span></div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#8b93a7;margin-top:20px;line-height:1.55;text-wrap:pretty">Anneau conique violet→cyan (le pion), disque intérieur = le fond de l'app, « y » évidé centré. L'épaisseur de l'anneau = 12,5 % du diamètre. « y » optiquement remonté de 2 %.</div>
+      </div>
+
+      <!-- lockups -->
+      <div style="border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;padding:24px;animation:fade .5s var(--ease) both;animation-delay:.08s">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:20px">Lockups</div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <!-- horizontal -->
+          <div style="display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:1px solid #ffffff0d">
+            <div style="width:64px;flex-shrink:0;font-size:10px;color:#5f6982;font-weight:700">HORIZONTAL</div>
+            <div style="display:flex;align-items:center;gap:13px">
+              <div style="width:46px;height:46px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:35px;height:35px;border-radius:50%;background:#141824;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:21px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+              <span style="font-family:'Space Grotesk';font-weight:700;font-size:26px;letter-spacing:-.02em">yGAMES</span>
+            </div>
+          </div>
+          <!-- stacked -->
+          <div style="display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:1px solid #ffffff0d">
+            <div style="width:64px;flex-shrink:0;font-size:10px;color:#5f6982;font-weight:700">EMPILÉ</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div style="width:44px;height:44px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:34px;height:34px;border-radius:50%;background:#141824;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:20px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+              <span style="font-family:'Space Grotesk';font-weight:700;font-size:18px;letter-spacing:.02em">yGAMES</span>
+            </div>
+          </div>
+          <!-- with tagline -->
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:64px;flex-shrink:0;font-size:10px;color:#5f6982;font-weight:700">SIGNATURE</div>
+            <div style="display:flex;align-items:center;gap:13px">
+              <div style="width:46px;height:46px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:35px;height:35px;border-radius:50%;background:#141824;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:21px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+              <div style="line-height:1.1"><div style="font-family:'Space Grotesk';font-weight:700;font-size:22px;letter-spacing:-.01em">yGAMES</div><div style="font-size:9.5px;letter-spacing:.22em;color:#5f6982;text-transform:uppercase;margin-top:3px">Soirées entre potes</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: mono + on backgrounds + favicon -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:18px">
+      <!-- mono -->
+      <div style="border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;padding:24px;animation:fade .5s var(--ease) both;animation-delay:.12s">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:20px">Monochrome</div>
+        <div style="display:flex;align-items:center;justify-content:space-around">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div style="width:58px;height:58px;border-radius:50%;background:#fff;display:grid;place-items:center"><div style="width:45px;height:45px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:26px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+            <span style="font-size:11px;color:#5f6982">Blanc</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div style="width:58px;height:58px;border-radius:50%;background:#5f6982;display:grid;place-items:center"><div style="width:45px;height:45px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:26px;color:#98a1b6;transform:translateY(-1px)">y</span></div></div>
+            <span style="font-size:11px;color:#5f6982">Gris (désactivé)</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#8b93a7;margin-top:20px;line-height:1.5">Sans le dégradé pour le mono : favicon 1-bit, filigrane, impression. L'anneau reste plein.</div>
+      </div>
+
+      <!-- on backgrounds -->
+      <div style="border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;padding:24px;animation:fade .5s var(--ease) both;animation-delay:.16s">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:20px">Sur fonds</div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1;height:88px;border-radius:12px;background:#f3f2f2;display:grid;place-items:center"><div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:40px;height:40px;border-radius:50%;background:#f3f2f2;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:23px;color:#0e1016;transform:translateY(-1px)">y</span></div></div></div>
+          <div style="flex:1;height:88px;border-radius:12px;background:#0a0b10;border:1px solid #ffffff10;display:grid;place-items:center"><div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:40px;height:40px;border-radius:50%;background:#0a0b10;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:23px;color:#fff;transform:translateY(-1px)">y</span></div></div></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px">
+          <div style="flex:1;height:88px;border-radius:12px;background:linear-gradient(135deg,#7c6cff,#22d3ee);display:grid;place-items:center"><div style="width:52px;height:52px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:26px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+          <div style="flex:1;height:88px;border-radius:12px;background:#ff4d5e;display:grid;place-items:center"><div style="width:52px;height:52px;border-radius:50%;background:#fff;display:grid;place-items:center"><div style="width:40px;height:40px;border-radius:50%;background:#ff4d5e;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:23px;color:#fff;transform:translateY(-1px)">y</span></div></div></div>
+        </div>
+        <div style="font-size:11.5px;color:#8b93a7;margin-top:14px;line-height:1.5">Le disque intérieur prend la couleur du fond → le « y » semble découpé.</div>
+      </div>
+
+      <!-- favicon ladder -->
+      <div style="border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;padding:24px;animation:fade .5s var(--ease) both;animation-delay:.2s">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:20px">Lisibilité en petit</div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:9px">
+            <div style="width:64px;height:64px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:49px;height:49px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:29px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+            <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">64</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:9px">
+            <div style="width:40px;height:40px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:31px;height:31px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:18px;color:#fff;transform:translateY(-1px)">y</span></div></div>
+            <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">40</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:9px">
+            <div style="width:24px;height:24px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:18px;height:18px;border-radius:50%;background:#0e1016;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:11px;color:#fff">y</span></div></div>
+            <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">24</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:9px">
+            <div style="width:16px;height:16px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:11px;height:11px;border-radius:50%;background:#0e1016"></div></div>
+            <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">16</span>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:#8b93a7;margin-top:18px;line-height:1.5">Sous 20 px, on retire le « y » : l'anneau + point sombre restent identifiables.</div>
+      </div>
+    </div>
+
+    <!-- ROW 3: app icon (squircle) -->
+    <div style="border-radius:16px;background:linear-gradient(158deg,#141824,#0f1119);border:1px solid #ffffff12;padding:24px 26px;display:flex;align-items:center;gap:30px;animation:fade .5s var(--ease) both;animation-delay:.24s">
+      <div style="flex:1">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5f6982;font-weight:700;margin-bottom:10px">Icône d'application</div>
+        <div style="font-size:13px;color:#8b93a7;line-height:1.55;text-wrap:pretty">Le dock impose un carré arrondi (squircle). Le jeton s'y pose sur un fond profond violet→noir : l'anneau flotte, le « y » reste blanc. On garde le pion reconnaissable sans forcer un cercle dans un carré.</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:22px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="position:relative;width:120px;height:120px;border-radius:28px;background:radial-gradient(120% 120% at 30% 15%,#2a2350,#0d0b16);display:grid;place-items:center;box-shadow:0 18px 46px rgba(124,108,255,.4),inset 0 1px 0 #ffffff22;overflow:hidden">
+            <div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.4)"><div style="width:60px;height:60px;border-radius:50%;background:#0d0b16;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:36px;color:#fff;transform:translateY(-2px)">y</span></div></div>
+          </div>
+          <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">1024 · master</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="position:relative;width:64px;height:64px;border-radius:16px;background:radial-gradient(120% 120% at 30% 15%,#2a2350,#0d0b16);display:grid;place-items:center;box-shadow:0 10px 24px rgba(124,108,255,.4),inset 0 1px 0 #ffffff22"><div style="width:42px;height:42px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:31px;height:31px;border-radius:50%;background:#0d0b16;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:19px;color:#fff;transform:translateY(-1px)">y</span></div></div></div>
+          <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">128</span>
+        </div>
+        <!-- in dock -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;gap:8px;background:#ffffff0d;backdrop-filter:blur(8px);border:1px solid #ffffff16;border-radius:16px;padding:8px 11px">
+            <div style="width:36px;height:36px;border-radius:10px;background:#2a3040;opacity:.5"></div>
+            <div style="position:relative;width:44px;height:44px;border-radius:12px;background:radial-gradient(120% 120% at 30% 15%,#2a2350,#0d0b16);display:grid;place-items:center;box-shadow:0 8px 18px rgba(124,108,255,.5),inset 0 1px 0 #ffffff22"><div style="width:30px;height:30px;border-radius:50%;background:conic-gradient(from 210deg,#7c6cff,#22d3ee,#7c6cff);display:grid;place-items:center"><div style="width:22px;height:22px;border-radius:50%;background:#0d0b16;display:grid;place-items:center"><span style="font-family:'Space Grotesk';font-weight:700;font-size:13px;color:#fff">y</span></div></div><span style="position:absolute;bottom:-8px;left:50%;margin-left:-2px;width:4px;height:4px;border-radius:50%;background:#fff"></span></div>
+            <div style="width:36px;height:36px;border-radius:10px;background:#2a3040;opacity:.5"></div>
+          </div>
+          <span style="font-family:'JetBrains Mono';font-size:10px;color:#5f6982">dans le dock</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:880}}"></script>
+</body>
+</html>

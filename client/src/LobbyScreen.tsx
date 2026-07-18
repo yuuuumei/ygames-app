@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Friend, GameMeta, Lobby, PLAYABLE_GAMES } from "./useSocial";
+import Avatar from "./components/Avatar";
 
 type Props = {
   lobby: Lobby;
   meId: number;
   friends: Friend[];
   games: GameMeta[];
-  /** Jeu cliqué depuis l'accueil (mis en avant en arrivant). */
   initialGameId?: string | null;
   onInvite: (userId: number) => Promise<string | null>;
   onKick: (userId: number) => Promise<string | null>;
@@ -15,14 +15,9 @@ type Props = {
   onStartGame: (gameId: string) => Promise<string | null>;
 };
 
-function Avatar({ user }: { user: Friend }) {
-  return user.avatar_url ? (
-    <img className="online-avatar" src={user.avatar_url} alt="" />
-  ) : (
-    <span className="online-avatar online-avatar-fallback">
-      {user.display_name.slice(0, 1).toUpperCase()}
-    </span>
-  );
+function fmtTime(ts: number): string {
+  const d = new Date(ts * 1000);
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
 export default function LobbyScreen(props: Props) {
@@ -38,12 +33,22 @@ export default function LobbyScreen(props: Props) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lobby.chat.length]);
 
+  const host = lobby.members.find((m) => m.id === lobby.host_id);
+  const impostor = props.games.find((g) => g.id === "impostor");
+  const min = impostor?.min_players ?? 3;
+  const max = impostor?.max_players ?? 12;
+  const connectedCount = lobby.members.filter((m) => m.connected).length;
+  const enough = connectedCount >= min;
+  const freeSeats = Math.max(0, max - lobby.members.length);
+
+  const memberIds = new Set(lobby.members.map((m) => m.id));
+  const invitable = props.friends.filter((f) => f.online && !memberIds.has(f.id));
+
   async function copyCode() {
     await navigator.clipboard.writeText(lobby.code).catch(() => {});
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied(false), 1600);
   }
-
   async function submitChat(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
@@ -51,144 +56,292 @@ export default function LobbyScreen(props: Props) {
     setDraft("");
     await props.onChat(text);
   }
-
   async function invite(id: number) {
     const err = await props.onInvite(id);
     if (!err) setInvited((prev) => [...prev, id]);
   }
-
-  const memberIds = new Set(lobby.members.map((m) => m.id));
-  const invitable = props.friends.filter((f) => f.online && !memberIds.has(f.id));
-  const n = lobby.members.length;
+  async function launch() {
+    setError(await props.onStartGame("impostor"));
+  }
 
   return (
-    <div className="lobby">
-      <header className="lobby-header">
-        <div className="lobby-header-left">
-          <h1 className="lobby-title">On joue à quoi ?</h1>
-          <button className="lobby-code" onClick={copyCode} title="Code à partager pour rejoindre">
-            {lobby.code} {copied ? "✓ copié" : "⧉"}
+    <div className="tbl">
+      {/* en-tête table */}
+      <header className="tbl-head">
+        <div className="tbl-head-left">
+          <button className="tbl-back" onClick={props.onLeave} title="Quitter la table">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <div className="tbl-emblem">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#98a1b6" strokeWidth="2">
+              <path d="M3 11h18M6 15h.01M10 15h.01" />
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+            </svg>
+          </div>
+          <div>
+            <div className="tbl-title">La table de {host?.display_name ?? "…"}</div>
+            <div className="muted small">On joue à quoi ce soir ?</div>
+          </div>
+        </div>
+        <div className="tbl-code-wrap">
+          <span className="tbl-code-label">Code de la table</span>
+          <button className="tbl-code" onClick={copyCode}>
+            <span className="tbl-code-value">{lobby.code}</span>
+            <span className={"tbl-copy" + (copied ? " copied" : "")}>
+              {copied ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M9 3h9a2 2 0 0 1 2 2v9M15 21H6a2 2 0 0 1-2-2V8" />
+                </svg>
+              )}
+              {copied ? "Copié" : "Copier"}
+            </span>
           </button>
         </div>
-        <button className="ghost-btn" onClick={props.onLeave}>
-          Quitter le groupe
-        </button>
       </header>
 
-      <div className="lobby-body">
-        <aside className="lobby-side">
-          <h2 className="online-title">La bande — {n}</h2>
-          <ul className="online-list">
-            {lobby.members.map((m) => (
-              <li key={m.id} className="online-item">
-                <Avatar user={m} />
-                <span className="online-name">
-                  {m.display_name}
-                  {m.id === lobby.host_id && <span title="Host"> 👑</span>}
-                </span>
-                <span className={m.connected ? "dot dot-on" : "dot dot-idle"} />
-                {isHost && m.id !== props.meId && (
-                  <button
-                    className="mini-btn no ghost"
-                    title="Exclure"
-                    onClick={() => props.onKick(m.id)}
-                  >
-                    ✕
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+      <div className="tbl-body">
+        {/* GAUCHE : la bande */}
+        <aside className="tbl-side">
+          <div className="tbl-side-head">
+            <span className="tbl-side-title">La bande</span>
+            <span className="muted small">
+              <span style={{ color: "var(--txt)", fontWeight: 700 }}>{lobby.members.length}</span> / {max}
+            </span>
+          </div>
+
+          <div className="tbl-seats">
+            {lobby.members.map((m) => {
+              const isMe = m.id === props.meId;
+              const isTheHost = m.id === lobby.host_id;
+              return (
+                <div key={m.id} className={"tbl-seat" + (isMe ? " me" : "")}>
+                  <div className={"tbl-seat-avatar" + (m.connected ? "" : " off")}>
+                    <Avatar url={m.avatar_url} name={m.display_name} />
+                    {isTheHost && (
+                      <span className="tbl-crown" title="Hôte">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M3 7l4.5 4L12 5l4.5 6L21 7l-1.8 11H4.8L3 7Z" />
+                        </svg>
+                      </span>
+                    )}
+                    <span
+                      className="tbl-seat-dot"
+                      style={{ background: m.connected ? "var(--online)" : "var(--txt-3)" }}
+                    />
+                  </div>
+                  <div className="tbl-seat-info">
+                    <div className="tbl-seat-name-row">
+                      <span className="tbl-seat-name" style={{ color: m.connected ? "var(--txt)" : "var(--txt-2)" }}>
+                        {m.display_name}
+                      </span>
+                      {isMe && <span className="tbl-badge-you">TOI</span>}
+                    </div>
+                    <div className="tbl-seat-status" style={{ color: m.connected ? "var(--txt-2)" : "var(--txt-3)" }}>
+                      {isTheHost ? "Hôte · " : ""}
+                      {m.connected ? "en ligne" : "déconnecté 💤"}
+                    </div>
+                  </div>
+                  {isHost && !isMe && (
+                    <button className="tbl-kick" title="Exclure" onClick={() => props.onKick(m.id)}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {freeSeats > 0 && (
+              <div className="tbl-empty-seat">
+                <div className="tbl-empty-avatar">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </div>
+                <span className="muted small">Places libres · {freeSeats}</span>
+              </div>
+            )}
+          </div>
 
           {invitable.length > 0 && (
-            <>
-              <h2 className="online-title invite-title">Inviter</h2>
-              <ul className="online-list">
-                {invitable.map((f) => (
-                  <li key={f.id} className="online-item">
-                    <Avatar user={f} />
-                    <span className="online-name">{f.display_name}</span>
-                    <button
-                      className="mini-btn invite"
-                      disabled={invited.includes(f.id)}
-                      onClick={() => invite(f.id)}
-                    >
-                      {invited.includes(f.id) ? "✓" : "+"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
+            <div className="tbl-invite">
+              <div className="tbl-invite-label">Inviter — en ligne</div>
+              {invitable.map((f) => (
+                <div key={f.id} className="tbl-invite-row">
+                  <div className="tbl-invite-avatar">
+                    <Avatar url={f.avatar_url} name={f.display_name} />
+                    <span className="tbl-seat-dot" style={{ background: "var(--online)" }} />
+                  </div>
+                  <span className="tbl-invite-name">{f.display_name}</span>
+                  <button
+                    className={"tbl-invite-btn" + (invited.includes(f.id) ? " done" : "")}
+                    disabled={invited.includes(f.id)}
+                    onClick={() => invite(f.id)}
+                  >
+                    {invited.includes(f.id) ? (
+                      <>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Invité
+                      </>
+                    ) : (
+                      <>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Inviter
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </aside>
 
-        <section className="lobby-main">
-          <div className="launcher-grid">
-            {props.games.map((g) => {
-              const playable = PLAYABLE_GAMES.has(g.id);
-              const enough = n >= g.min_players;
-              const canLaunch = isHost && playable && enough;
-              return (
-                <button
-                  key={g.id}
-                  className={
-                    "game-card-lg" +
-                    (g.id === props.initialGameId ? " game-picked" : "")
-                  }
-                  disabled={!canLaunch}
-                  title={g.description}
-                  onClick={async () => setError(await props.onStartGame(g.id))}
-                >
-                  <span className="game-icon-lg">{g.icon}</span>
-                  <span className="game-name">{g.name}</span>
-                  <span className="muted small">
-                    {!playable
-                      ? "bientôt"
-                      : !enough
-                        ? `encore ${g.min_players - n} joueur${g.min_players - n > 1 ? "s" : ""}…`
-                        : isHost
-                          ? "Lancer ▶"
-                          : `${g.min_players}–${g.max_players} joueurs`}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {!isHost && (
-            <p className="muted small">
-              {lobby.members.find((m) => m.id === lobby.host_id)?.display_name}{" "}
-              choisit le jeu 👑
-            </p>
-          )}
-          {error && <p className="error small">{error}</p>}
+        {/* CENTRE : choix du jeu */}
+        <main className="tbl-center">
+          <div className="tbl-center-label">Choisis un jeu</div>
 
-          <div className="lobby-chat">
-            <div className="chat-messages">
-              {lobby.chat.length === 0 && (
-                <p className="muted small">Dis bonjour à ta bande. 👋</p>
-              )}
-              {lobby.chat.map((msg, i) => (
-                <div key={i} className="chat-msg">
-                  <span className="chat-author">{msg.from.display_name}</span>
-                  <span className="chat-text">{msg.text}</span>
+          <div className="tbl-game-hero">
+            <div className="tbl-game-bg" />
+            <div className="tbl-game-watermark">?</div>
+            <div className="tbl-game-content">
+              <div>
+                <div className="tbl-game-tags">
+                  <span className="tbl-tag-selected">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Sélectionné
+                  </span>
+                  <span className="muted small" style={{ fontWeight: 600 }}>
+                    {min} – {max} joueurs · ~15 min
+                  </span>
+                </div>
+                <div className="tbl-game-title">L'Imposteur</div>
+                <div className="tbl-game-desc">
+                  Tout le monde reçoit un mot. Un seul en a un autre — et il ne le sait pas. Indices,
+                  doutes, vote.
+                </div>
+              </div>
+
+              <div className="tbl-launch-row">
+                {isHost ? (
+                  enough ? (
+                    <>
+                      <button className="tbl-launch" onClick={launch}>
+                        <span className="hero-cta-sheen" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                        Lancer la partie
+                      </button>
+                      <span className="muted small" style={{ fontWeight: 500 }}>
+                        {connectedCount} joueurs prêts. C'est quand tu veux.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="tbl-launch-wait">
+                        <span className="spinner" style={{ width: 18, height: 18, borderColor: "var(--txt-3)", borderTopColor: "transparent" }} />
+                        Encore {min - connectedCount} joueur{min - connectedCount > 1 ? "s" : ""}…
+                      </div>
+                      <span className="muted small" style={{ fontWeight: 500 }}>
+                        Invite tes potes ou partage le code.
+                      </span>
+                    </>
+                  )
+                ) : (
+                  <span className="muted" style={{ fontWeight: 500 }}>
+                    {host?.display_name} choisit et lance le jeu 👑
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="tbl-switcher">
+            <div className="tbl-switch-card selected">
+              <div className="tbl-switch-top">
+                <span className="tbl-switch-name">L'Imposteur</span>
+                <span className="tbl-switch-live" />
+              </div>
+              <div className="muted small">Info cachée</div>
+            </div>
+            {props.games
+              .filter((g) => !PLAYABLE_GAMES.has(g.id))
+              .map((g) => (
+                <div key={g.id} className="tbl-switch-card locked">
+                  <div className="tbl-switch-top">
+                    <span className="tbl-switch-name" style={{ color: "#cdd3e0" }}>
+                      {g.name}
+                    </span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="2.4">
+                      <rect x="3" y="11" width="18" height="10" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </div>
+                  <div className="muted small">Bientôt</div>
                 </div>
               ))}
-              <div ref={chatEndRef} />
-            </div>
-            <form className="chat-form" onSubmit={submitChat}>
-              <input
-                className="add-input"
-                value={draft}
-                onChange={(e) => setDraft(e.currentTarget.value)}
-                placeholder="Écrire à la bande…"
-                maxLength={500}
-              />
-              <button className="add-btn" disabled={!draft.trim()}>
-                Envoyer
-              </button>
-            </form>
           </div>
-        </section>
+
+          {error && <p className="error small" style={{ marginTop: 10 }}>{error}</p>}
+        </main>
+
+        {/* DROITE : chat */}
+        <aside className="tbl-chat">
+          <div className="tbl-chat-head">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#98a1b6" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+            </svg>
+            <span className="tbl-chat-title">Chat</span>
+          </div>
+          <div className="tbl-chat-msgs">
+            {lobby.chat.length === 0 && (
+              <p className="muted small" style={{ textAlign: "center", padding: "1rem" }}>
+                Dis bonjour à ta bande. 👋
+              </p>
+            )}
+            {lobby.chat.map((msg, i) => (
+              <div key={i} className="tbl-msg">
+                <Avatar url={msg.from.avatar_url} name={msg.from.display_name} className="tbl-msg-avatar" />
+                <div style={{ minWidth: 0 }}>
+                  <div className="tbl-msg-meta">
+                    <span className="tbl-msg-name">{msg.from.display_name}</span>
+                    <span className="tbl-msg-time">{fmtTime(msg.ts)}</span>
+                  </div>
+                  <div className="tbl-msg-text">{msg.text}</div>
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          <form className="tbl-chat-input" onSubmit={submitChat}>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.currentTarget.value)}
+              placeholder="Écris un message…"
+              maxLength={500}
+            />
+            <button type="submit" disabled={!draft.trim()} title="Envoyer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m22 2-7 20-4-9-9-4Z" />
+                <path d="M22 2 11 13" />
+              </svg>
+            </button>
+          </form>
+        </aside>
       </div>
     </div>
   );

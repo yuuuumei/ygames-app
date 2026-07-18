@@ -1,0 +1,863 @@
+﻿:root {
+  font-family: Inter, "Segoe UI", Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: #e8e6f0;
+  background-color: #14121c;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 0%, rgba(88, 101, 242, 0.18), transparent),
+    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(235, 69, 158, 0.10), transparent),
+    #14121c;
+  user-select: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 4rem;
+  text-align: center;
+}
+
+.brand {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.brand-accent {
+  background: linear-gradient(90deg, #5865f2, #eb459e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline {
+  color: #9b97ad;
+  margin-bottom: 2rem;
+}
+
+.discord-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.8rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.discord-btn:hover:not(:disabled) {
+  background-color: #4752c4;
+}
+
+.discord-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.discord-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.discord-icon {
+  width: 1.4em;
+  height: 1.4em;
+}
+
+.ghost-btn {
+  margin-top: 1.5rem;
+  padding: 0.55rem 1.3rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #9b97ad;
+  background: transparent;
+  border: 1px solid #3a3650;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.ghost-btn:hover {
+  color: #e8e6f0;
+  border-color: #9b97ad;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid #5865f2;
+  margin-bottom: 0.75rem;
+}
+
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.welcome {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.muted {
+  color: #9b97ad;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.next-up {
+  margin-top: 1.25rem;
+}
+
+.error {
+  margin-top: 1rem;
+  max-width: 28rem;
+  font-size: 0.9rem;
+  color: #ed4245;
+}
+
+.version {
+  margin-top: 3rem;
+  font-size: 0.75rem;
+  color: #55516a;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 0.45rem;
+  vertical-align: 1px;
+}
+
+.dot-on {
+  background: #57f287;
+}
+
+.dot-off {
+  background: #ed4245;
+}
+
+.dot-idle {
+  background: #55516a;
+}
+
+.add-friend {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.add-input {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #e8e6f0;
+  background: #14121c;
+  border: 1px solid #3a3650;
+  border-radius: 8px;
+  outline: none;
+}
+
+.add-input:focus {
+  border-color: #5865f2;
+}
+
+.add-btn {
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.requests {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2c2940;
+}
+
+.requests-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #eb459e;
+  margin-bottom: 0.6rem;
+}
+
+.mini-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.mini-btn.ok {
+  background: #248046;
+}
+
+.mini-btn.no {
+  background: #da373c;
+}
+
+.mini-btn.ghost {
+  background: transparent;
+  color: #55516a;
+}
+
+.mini-btn.ghost:hover {
+  background: #da373c;
+  color: #ffffff;
+}
+
+.outgoing-note {
+  margin-top: 0.75rem;
+}
+
+.online-panel {
+  margin-top: 2rem;
+  min-width: 20rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.online-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9b97ad;
+  margin-bottom: 0.75rem;
+}
+
+.online-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.online-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.online-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.online-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.online-name {
+  flex: 1;
+  font-size: 0.95rem;
+}
+
+.screen-top {
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.lobby {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.lobby-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.lobby-header .ghost-btn {
+  margin-top: 0;
+}
+
+.lobby-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.lobby-code {
+  padding: 0.3rem 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: Consolas, monospace;
+  letter-spacing: 0.2em;
+  color: #eb459e;
+  background: rgba(235, 69, 158, 0.08);
+  border: 1px dashed #eb459e55;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lobby-body {
+  flex: 1;
+  display: flex;
+  gap: 1.25rem;
+  min-height: 0;
+}
+
+.lobby-side {
+  width: 17rem;
+  flex-shrink: 0;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  overflow-y: auto;
+}
+
+.invite-title {
+  margin-top: 1.25rem;
+}
+
+.mini-btn.invite {
+  background: #5865f2;
+}
+
+.mini-btn.invite:disabled {
+  background: #248046;
+  cursor: default;
+}
+
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.member-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.lobby-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  min-height: 0;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  text-align: left;
+}
+
+.chat-msg {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.chat-author {
+  font-weight: 600;
+  color: #5865f2;
+  margin-right: 0.5rem;
+}
+
+.chat-author::after {
+  content: " ·";
+  color: #3a3650;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-form .add-input {
+  flex: 1;
+}
+
+.lobby-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.5rem;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.create-lobby-btn {
+  justify-content: center;
+}
+
+.code-input {
+  font-family: Consolas, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ------- launcher (accueil) ------- */
+
+.launcher {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  max-width: 68rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.launcher-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+
+.launcher-header .ghost-btn {
+  margin-top: 0;
+}
+
+.launcher-me {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.launcher-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.brand-small {
+  font-size: 1.5rem;
+}
+
+.launcher-body {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.launcher-main {
+  flex: 1;
+  text-align: left;
+}
+
+.launcher-main .online-title {
+  margin-bottom: 0.9rem;
+}
+
+.launcher-side {
+  width: 21rem;
+  flex-shrink: 0;
+}
+
+.launcher-side .online-panel {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.launcher-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.game-card-lg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem 2rem;
+  min-width: 11rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 14px;
+  color: #e8e6f0;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.game-card-lg:hover:not(:disabled) {
+  border-color: #5865f2;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(88, 101, 242, 0.15);
+}
+
+.game-card-lg:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.game-card-lg.game-picked {
+  border-color: #eb459e;
+}
+
+.game-icon-lg {
+  font-size: 2.6rem;
+}
+
+.game-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.launcher-hint {
+  margin-top: 1rem;
+}
+
+.join-code {
+  margin-top: 1.25rem;
+  max-width: 20rem;
+}
+
+.lobby-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-height: 0;
+  text-align: left;
+}
+
+.lobby-main .launcher-grid {
+  justify-content: flex-start;
+}
+
+.lobby-main .lobby-chat {
+  flex: 1;
+  min-height: 10rem;
+}
+
+.lobby-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ------- écran de jeu ------- */
+
+.game {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 2rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.game-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  align-self: stretch;
+}
+
+.game-badge {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.word-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.25rem 3rem;
+  background: rgba(88, 101, 242, 0.08);
+  border: 1px solid #5865f255;
+  border-radius: 14px;
+}
+
+.word-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9b97ad;
+}
+
+.word-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.gp-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.gp-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 1rem;
+  min-width: 6.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  color: #e8e6f0;
+  font-family: inherit;
+  cursor: default;
+}
+
+.gp-card.gp-turn {
+  border-color: #eb459e;
+  box-shadow: 0 0 12px rgba(235, 69, 158, 0.25);
+}
+
+.gp-card.gp-votable {
+  cursor: pointer;
+}
+
+.gp-card.gp-votable:hover {
+  border-color: #ed4245;
+  transform: translateY(-2px);
+}
+
+.gp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.gp-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+}
+
+.gp-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.gp-status {
+  font-size: 0.8rem;
+  min-height: 1.1em;
+}
+
+.clues {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 12px;
+  min-width: 24rem;
+  text-align: left;
+}
+
+.game-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.clue-form {
+  min-width: 24rem;
+}
+
+.vote-open-btn.subtle {
+  opacity: 0.55;
+}
+
+.reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.5rem 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2c2940;
+  border-radius: 14px;
+}
+
+.reveal-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.reveal-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+
+.pending-code {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: Consolas, monospace;
+  letter-spacing: 0.25em;
+  color: #eb459e;
+  margin: 0.5rem 0 1rem;
+}
+
+.reconnect-btn {
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.invite-banner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.7rem 1.1rem;
+  background: #1e1b2e;
+  border: 1px solid #5865f2;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  font-size: 0.95rem;
+}
+
+.update-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  background: #1e1b2e;
+  border-top: 1px solid #3a3650;
+  color: #e8e6f0;
+  z-index: 10;
+}
+
+.update-btn {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background-color: #5865f2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-btn:hover:not(:disabled) {
+  background-color: #4752c4;
+}
+
+.update-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.update-error {
+  color: #ed4245;
+}

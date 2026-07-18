@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050609;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  ::selection{background:rgba(124,108,255,.35)}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(120%)}to{opacity:1;transform:none}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(40px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes dot{0%,100%{box-shadow:0 0 0 0 rgba(67,209,122,.55)}70%{box-shadow:0 0 0 6px rgba(67,209,122,0)}}
+  @keyframes sheen{0%{transform:translateX(-120%)}60%,100%{transform:translateX(240%)}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  @keyframes ring{0%{transform:scale(.7);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+  @keyframes spinslow{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="position:relative;width:1100px;height:720px;background:#0e1016;border:1px solid #ffffff16;border-radius:14px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6);font-family:'Manrope',sans-serif;color:#eef1f8;
+  --accent:#7c6cff;--accent-2:#22d3ee;--gold:#ffc24b;--online:#43d17a;--danger:#ff4d5e;--discord:#5865f2;--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1)">
+
+  <!-- faux app backdrop (dimmed) -->
+  <div style="position:absolute;inset:0;z-index:0;opacity:.4;filter:saturate(.7)">
+    <div style="position:absolute;top:-120px;left:-80px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(124,108,255,.16),transparent 70%);filter:blur(30px)"></div>
+    <div style="position:absolute;bottom:-160px;right:-60px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.10),transparent 70%);filter:blur(30px)"></div>
+  </div>
+  <div style="position:absolute;inset:0;z-index:0;background:#05060988"></div>
+
+  <!-- annotation -->
+  <div style="position:absolute;top:26px;left:0;right:0;z-index:1;text-align:center;animation:fade .5s var(--ease) both">
+    <div style="font-family:'Space Grotesk';font-weight:700;font-size:16px;letter-spacing:.02em;color:#c3c9d6">Bannières système</div>
+    <div style="font-size:12.5px;color:#5f6982;margin-top:3px">Superposées à l'app, non bloquantes. Elles apparaissent en glissant, disparaissent seules.</div>
+  </div>
+
+  <!-- ==== invitation reçue (top-right toast) ==== -->
+  <div style="position:absolute;top:96px;right:28px;z-index:3;width:352px;animation:slideIn .5s var(--spring) both;animation-delay:.15s">
+    <div style="position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(158deg,#191d29,#12141c);border:1px solid rgba(124,108,255,.3);box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px #ffffff08">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c6cff,#22d3ee)"></div>
+      <div style="padding:16px 16px 14px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="position:relative;width:46px;height:46px;flex-shrink:0">
+            <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#eb459e,#c0367f);display:grid;place-items:center;font-weight:700;font-size:18px;color:#fff">I</div>
+            <span style="position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#43d17a;border:2.5px solid #191d29;animation:dot 2.4s ease-in-out infinite"></span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;line-height:1.35"><span style="font-weight:700">Inès</span> <span style="color:#98a1b6">t'invite à sa table</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#ff8a95"><span style="width:6px;height:6px;border-radius:50%;background:#ff4d5e"></span>L'Imposteur</span>
+              <span style="width:3px;height:3px;border-radius:50%;background:#3a4152"></span>
+              <span style="font-family:'JetBrains Mono';font-size:11px;font-weight:700;letter-spacing:.18em;color:#8b93a7">WXYZ</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:14px">
+          <div onClick="{{ noop }}" style="position:relative;overflow:hidden;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#7c6cff,#5a49e0);color:#fff;font-weight:700;font-size:14px;height:42px;border-radius:11px;cursor:pointer;box-shadow:0 8px 22px rgba(124,108,255,.4);transition:transform .16s var(--spring)" style-hover="transform:translateY(-2px)" style-active="transform:scale(.98)">
+            <span style="position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-20deg);animation:sheen 3.6s ease-in-out infinite"></span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Rejoindre
+          </div>
+          <div onClick="{{ noop }}" style="display:flex;align-items:center;justify-content:center;background:#ffffff0d;color:#98a1b6;font-weight:700;font-size:14px;height:42px;padding:0 18px;border-radius:11px;cursor:pointer;transition:all .16s var(--ease)" style-hover="background:#ffffff16;color:#eef1f8">Ignorer</div>
+        </div>
+      </div>
+      <!-- auto-dismiss progress -->
+      <div style="height:3px;background:#ffffff08"><div style="height:100%;width:62%;background:linear-gradient(90deg,#7c6cff,#22d3ee);opacity:.5"></div></div>
+    </div>
+  </div>
+
+  <!-- ==== 2e invitation empilée (montre le stacking) ==== -->
+  <div style="position:absolute;top:300px;right:28px;z-index:2;width:352px;animation:slideIn .5s var(--spring) both;animation-delay:.3s">
+    <div style="position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(158deg,#171a24,#101219);border:1px solid #ffffff12;box-shadow:0 20px 50px rgba(0,0,0,.45)">
+      <div style="padding:14px 16px;display:flex;align-items:center;gap:11px">
+        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#5865f2,#4149c9);display:grid;place-items:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0">M</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;line-height:1.35"><span style="font-weight:700">Maxime</span> <span style="color:#98a1b6">t'invite à sa table</span></div>
+          <div style="font-size:11.5px;color:#5f6982;margin-top:2px">à l'instant</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <div style="width:34px;height:34px;border-radius:9px;background:#7c6cff;display:grid;place-items:center;color:#fff;cursor:pointer;transition:transform .16s var(--spring)" style-hover="transform:scale(1.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div style="width:34px;height:34px;border-radius:9px;background:#ffffff0d;display:grid;place-items:center;color:#98a1b6;cursor:pointer;transition:all .16s var(--ease)" style-hover="background:#ffffff16;color:#eef1f8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==== mise à jour dispo (bottom bar) ==== -->
+  <div style="position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:4;width:560px;animation:slideUp .55s var(--spring) both;animation-delay:.45s">
+    <div style="position:relative;display:flex;align-items:center;gap:16px;background:linear-gradient(120deg,#161a24,#111420);border:1px solid #ffffff16;border-radius:14px;padding:14px 16px 14px 18px;box-shadow:0 24px 60px rgba(0,0,0,.55)">
+      <div style="position:relative;width:44px;height:44px;flex-shrink:0">
+        <span style="position:absolute;inset:-3px;border-radius:12px;border:1.5px solid rgba(34,211,238,.5);animation:ring 2s ease-out infinite"></span>
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(140deg,#22d3ee,#0e9bb5);display:grid;place-items:center;animation:bob 3s ease-in-out infinite;box-shadow:0 8px 22px rgba(34,211,238,.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#04222a" stroke-width="2.4"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="font-weight:700;font-size:15px">Mise à jour disponible</span>
+          <span style="font-family:'JetBrains Mono';font-size:10px;font-weight:700;letter-spacing:.06em;color:#22d3ee;background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.28);padding:2px 7px;border-radius:5px">v1.4.0</span>
+        </div>
+        <div style="font-size:12.5px;color:#8b93a7;margin-top:3px">Spyfall arrive, plus des correctifs. Redémarre pour installer.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div onClick="{{ noop }}" style="color:#8b93a7;font-weight:700;font-size:13px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .16s var(--ease)" style-hover="background:#ffffff0d;color:#eef1f8">Plus tard</div>
+        <div onClick="{{ noop }}" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#22d3ee,#12a8c4);color:#04222a;font-weight:700;font-size:14px;padding:11px 18px;border-radius:11px;cursor:pointer;box-shadow:0 8px 22px rgba(34,211,238,.35);transition:transform .16s var(--spring)" style-hover="transform:translateY(-2px)" style-active="transform:scale(.98)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Redémarrer</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  renderVals() { return { noop: () => {} }; }
+}
+</script>
+</body>
+</html>
