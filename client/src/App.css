@@ -550,6 +550,20 @@
    ACCUEIL — launcher
    ============================================================ */
 
+/* structure : sidebar pleine hauteur à droite, reste à gauche */
+.launcher-root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.launcher-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .launcher-header {
   position: relative;
   z-index: 2;
@@ -646,7 +660,10 @@
   cursor: default;
 }
 
-/* profil (header) */
+/* profil (header) + menu compte */
+.profile-menu-wrap {
+  position: relative;
+}
 .profile-chip {
   display: flex;
   align-items: center;
@@ -658,22 +675,97 @@
   cursor: pointer;
   transition: background 0.18s var(--ease);
 }
-.profile-chip:hover {
-  background: rgba(255, 255, 255, 0.04);
+.profile-chip:hover,
+.profile-chip.open {
+  background: rgba(255, 255, 255, 0.06);
 }
 .profile-avatar-wrap {
   position: relative;
-  display: flex;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+}
+.profile-avatar-wrap .avatar,
+.profile-avatar-wrap .avatar-fallback {
+  width: 36px;
+  height: 36px;
+  display: block;
 }
 .profile-status-dot {
   position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 11px;
-  height: 11px;
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   border: 2.5px solid var(--base);
+  box-sizing: border-box;
+}
+
+/* menu déroulant */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 41;
+  min-width: 210px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  animation: menuDrop 0.16s var(--ease) both;
+}
+@keyframes menuDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+.menu-item svg {
+  color: var(--txt-3);
+  flex-shrink: 0;
+}
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.menu-item.danger:hover {
+  background: rgba(255, 77, 94, 0.14);
+  color: #ff8a95;
+}
+.menu-item.danger:hover svg {
+  color: #ff8a95;
+}
+.menu-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 5px 8px;
 }
 .profile-text {
   display: flex;
@@ -704,10 +796,8 @@
 
 /* corps launcher */
 .launcher-body {
-  position: relative;
   flex: 1;
   min-height: 0;
-  padding-right: 72px; /* place réservée à la sidebar repliée */
 }
 .launcher-main {
   height: 100%;
@@ -716,7 +806,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .launcher-greet {
@@ -845,11 +936,11 @@
 /* hero jeu principal */
 .hero {
   position: relative;
-  flex: 1;
-  min-height: 240px;
+  flex: 1 1 auto;
+  min-height: 200px;
   border-radius: var(--r-panel);
   overflow: hidden;
-  border: 1px solid var(--line-2);
+  border: 1px solid transparent;
   cursor: pointer;
   transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease),
     border-color 0.3s var(--ease);
@@ -1055,23 +1146,20 @@
 /* ---- sidebar d'amis (une seule entité, s'élargit au survol) ---- */
 
 .friends-sidebar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  align-self: stretch;
   width: 72px;
-  z-index: 9;
+  flex-shrink: 0;
   background: var(--panel);
   border-left: 1px solid var(--line);
   overflow: hidden;
-  transition: width 0.28s var(--ease), box-shadow 0.28s var(--ease),
-    background 0.28s var(--ease), border-color 0.28s var(--ease);
+  transition: width 0.28s var(--ease), background 0.28s var(--ease),
+    border-color 0.28s var(--ease);
 }
 .friends-sidebar:hover {
   width: 340px;
   background: var(--surface);
   border-color: var(--line-2);
-  box-shadow: -30px 0 80px rgba(0, 0, 0, 0.55);
 }
 /* contenu à largeur fixe : il ne se recompose pas, il est juste dévoilé */
 .fs-inner {
@@ -3482,6 +3570,93 @@
 }
 .prof-admin:hover {
   background: rgba(255, 194, 75, 0.18);
+}
+
+/* ============================ PARAMÈTRES ============================ */
+
+.settings {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 40px 24px;
+}
+.settings-card {
+  position: relative;
+  z-index: 2;
+  width: 560px;
+  max-width: 100%;
+}
+.settings-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.settings-h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24px;
+}
+.settings-section {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+  font-weight: 700;
+  margin: 20px 4px 10px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.settings-row-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.settings-row-sub {
+  margin-top: 2px;
+}
+.settings-version {
+  font-weight: 700;
+  color: var(--accent-2);
+}
+.settings-toggle {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  background: var(--line-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s var(--ease);
+}
+.settings-toggle.on {
+  background: var(--online);
+}
+.settings-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s var(--spring);
+}
+.settings-toggle.on .settings-knob {
+  transform: translateX(20px);
 }
 
 /* ============================ BACK-OFFICE ADMIN ============================ */

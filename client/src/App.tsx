@@ -9,6 +9,7 @@ import FriendsRail from "./FriendsRail";
 import LoginScreen from "./LoginScreen";
 import ProfileScreen from "./ProfileScreen";
 import AdminScreen from "./AdminScreen";
+import SettingsScreen from "./SettingsScreen";
 import Splash from "./Splash";
 import TitleBar from "./components/TitleBar";
 import YMark from "./components/YMark";
@@ -37,6 +38,7 @@ function App() {
   const [version, setVersion] = useState("");
   const [pickedGame, setPickedGame] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const social = useSocial(screen.kind === "home");
 
@@ -89,6 +91,8 @@ function App() {
           onCancelLogin={handleCancelLogin}
           showProfile={showProfile}
           setShowProfile={setShowProfile}
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
           adminOpen={adminOpen}
           setAdminOpen={setAdminOpen}
         />
@@ -156,11 +160,13 @@ type BodyProps = {
   onCancelLogin: () => void;
   showProfile: boolean;
   setShowProfile: (v: boolean) => void;
+  showSettings: boolean;
+  setShowSettings: (v: boolean) => void;
   adminOpen: boolean;
   setAdminOpen: (v: boolean) => void;
 };
 
-function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, adminOpen, setAdminOpen }: BodyProps) {
+function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen }: BodyProps) {
   if (screen.kind === "loading") {
     return <Splash version={version} />;
   }
@@ -178,6 +184,11 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
   }
 
   const { user } = screen;
+
+  // Paramètres (accessible depuis le menu compte).
+  if (showSettings && !social.lobby && !social.gameView) {
+    return <SettingsScreen version={version} onClose={() => setShowSettings(false)} />;
+  }
 
   // Back-office admin (réservé, accessible depuis Mon profil).
   if (showProfile && adminOpen && social.profile?.is_admin && !social.lobby && !social.gameView) {
@@ -326,6 +337,8 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
         await social.createLobby();
       }}
       onOpenProfile={() => setShowProfile(true)}
+      onOpenSettings={() => setShowSettings(true)}
+      onLogout={onLogout}
     />
   );
 }
@@ -338,14 +351,19 @@ function Launcher({
   version,
   onPickGame,
   onOpenProfile,
+  onOpenSettings,
+  onLogout,
 }: {
   user: User;
   social: ReturnType<typeof useSocial>;
   version: string;
   onPickGame: (id: string) => void;
   onOpenProfile: () => void;
+  onOpenSettings: () => void;
+  onLogout: () => void;
 }) {
   const [code, setCode] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const impostor = social.games.find((g) => g.id === "impostor");
   const onlineCount = social.friends.filter((f) => f.online).length;
 
@@ -356,61 +374,98 @@ function Launcher({
   }
 
   return (
-    <>
-      {/* header */}
-      <div className="launcher-header">
-        <div className="brand-block">
-          <YMark variant="app" size={40} speed={7} />
-          <div>
-            <div className="brand-word">yGAMES</div>
-            <div className="brand-sub">Soirées entre potes</div>
+    <div className="launcher-root">
+      <div className="launcher-left">
+        {/* header */}
+        <div className="launcher-header">
+          <div className="brand-block">
+            <YMark variant="app" size={40} speed={7} />
+            <div>
+              <div className="brand-word">yGAMES</div>
+              <div className="brand-sub">Soirées entre potes</div>
+            </div>
+          </div>
+
+          <div className="header-right">
+            <form className="joincode" onSubmit={joinByCode}>
+              <span className="joincode-label">Rejoindre</span>
+              <input
+                className="joincode-input"
+                value={code}
+                onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
+                placeholder="CODE"
+                maxLength={4}
+                spellCheck={false}
+              />
+              <button className="joincode-go" disabled={code.trim().length < 4} title="Rejoindre">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </button>
+            </form>
+
+            <div className="header-sep" />
+
+            <div className="profile-menu-wrap">
+              <button
+                className={"profile-chip" + (menuOpen ? " open" : "")}
+                onClick={() => setMenuOpen((v) => !v)}
+                title="Mon compte"
+              >
+                <div className="profile-avatar-wrap">
+                  <Avatar url={user.avatar_url} name={user.display_name} size={36} />
+                  <span
+                    className="profile-status-dot"
+                    style={{ background: social.connected ? "var(--online)" : "var(--danger)" }}
+                  />
+                </div>
+                <div className="profile-text">
+                  <div className="profile-name">{user.display_name}</div>
+                  <div className="profile-state" style={{ color: social.connected ? "var(--online)" : "var(--danger)" }}>
+                    {social.connected ? "En ligne" : "Reconnexion…"}
+                  </div>
+                </div>
+                <svg className={"profile-chevron" + (menuOpen ? " up" : "")} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+                  <div className="profile-menu">
+                    <button className="menu-item" onClick={() => { setMenuOpen(false); onOpenProfile(); }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+                      </svg>
+                      Mon profil
+                    </button>
+                    <button className="menu-item" onClick={() => { setMenuOpen(false); onOpenSettings(); }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.8 19.5l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4.6 15H4.5a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 11 4.6V4.5a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8Z" />
+                      </svg>
+                      Paramètres
+                    </button>
+                    <div className="menu-sep" />
+                    <button className="menu-item danger" onClick={() => { setMenuOpen(false); onLogout(); }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <path d="m16 17 5-5-5-5M21 12H9" />
+                      </svg>
+                      Déconnexion
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="header-right">
-          <form className="joincode" onSubmit={joinByCode}>
-            <span className="joincode-label">Rejoindre</span>
-            <input
-              className="joincode-input"
-              value={code}
-              onChange={(e) => setCode(e.currentTarget.value.toUpperCase())}
-              placeholder="CODE"
-              maxLength={4}
-              spellCheck={false}
-            />
-            <button className="joincode-go" disabled={code.trim().length < 4} title="Rejoindre">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </button>
-          </form>
-
-          <div className="header-sep" />
-
-          <button className="profile-chip" onClick={onOpenProfile} title="Mon profil">
-            <div className="profile-avatar-wrap">
-              <Avatar url={user.avatar_url} name={user.display_name} size={36} />
-              <span
-                className="profile-status-dot"
-                style={{ background: social.connected ? "var(--online)" : "var(--danger)" }}
-              />
-            </div>
-            <div className="profile-text">
-              <div className="profile-name">{user.display_name}</div>
-              <div className="profile-state" style={{ color: social.connected ? "var(--online)" : "var(--danger)" }}>
-                {social.connected ? "En ligne" : "Reconnexion…"}
-              </div>
-            </div>
-            <svg className="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* corps : main + rail */}
-      <div className="launcher-body">
-        <div className="launcher-main">
+        {/* corps */}
+        <div className="launcher-body">
+          <div className="launcher-main">
           <div className="launcher-greet">
             <h1>Salut {user.display_name.split(" ")[0]}.</h1>
             <p>On joue à quoi ce soir ?</p>
@@ -522,19 +577,20 @@ function Launcher({
           </div>
 
           <p className="version">yGAMES v{version}</p>
+          </div>
         </div>
-
-        <FriendsRail
-          friends={social.friends}
-          incoming={social.incoming}
-          outgoing={social.outgoing}
-          onAdd={social.addFriend}
-          onAccept={social.acceptFriend}
-          onDecline={social.declineFriend}
-          onRemove={social.removeFriend}
-        />
       </div>
-    </>
+
+      <FriendsRail
+        friends={social.friends}
+        incoming={social.incoming}
+        outgoing={social.outgoing}
+        onAdd={social.addFriend}
+        onAccept={social.acceptFriend}
+        onDecline={social.declineFriend}
+        onRemove={social.removeFriend}
+      />
+    </div>
   );
 }
 

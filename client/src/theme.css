@@ -91,6 +91,14 @@ select {
   font-family: inherit;
 }
 
+/* pas de contour de focus disgracieux (app de jeu, pas de navigation clavier). */
+:focus {
+  outline: none;
+}
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Scrollbars discrètes, cohérentes avec le thème sombre. */
 *::-webkit-scrollbar {
   width: 8px;
