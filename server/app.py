@@ -9,13 +9,16 @@ WebSocket (SocketIO): connexion permanente de chaque client connecté.
       → "presence" {user, online: true|false}  à tous, à chaque changement
 """
 
+import mimetypes
 import os
 import random
 import secrets
 
+mimetypes.add_type("image/svg+xml", ".svg")  # servir les drapeaux comme du SVG
+
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO
 
 load_dotenv()  # charge server/.env
@@ -37,8 +40,69 @@ app = Flask(__name__)
 db.init_db()
 profiles.ensure_seed()  # remplit le catalogue par défaut au 1er lancement
 
-from games.quiz.data import SEED_QUESTIONS as _QUIZ_SEED  # noqa: E402
+from games.quiz.data import (  # noqa: E402
+    SEED_QUESTIONS as _QUIZ_SEED,
+    TIMELINE_QUESTIONS as _TL_SEED,
+    PETITBAC_QUESTIONS as _PB_SEED,
+)
 db.seed_quiz(_QUIZ_SEED)  # remplit la banque du Quiz au 1er lancement
+db.seed_quiz_type(_TL_SEED, "timeline")  # catégorie Frise chrono au 1er lancement
+db.seed_quiz_type(_PB_SEED, "petitbac")  # manches Petit Bac au 1er lancement
+from games.quiz.flags_data import FLAG_QUESTIONS as _FLAG_SEED  # noqa: E402
+db.seed_quiz_flags(_FLAG_SEED)  # catégorie Drapeaux (auto) au 1er lancement
+
+# Médias des questions : drapeaux BUNDLÉS (server/media) + UPLOADS (volume).
+_MEDIA_BUNDLED = os.path.join(os.path.dirname(__file__), "media")
+# Les uploads vivent à côté de la base (volume Railway = /data, ou dossier local).
+_UPLOAD_DIR = os.path.join(
+    os.path.dirname(os.environ.get("DATABASE_PATH", "")) or os.path.dirname(__file__),
+    "media_uploads",
+)
+os.makedirs(_UPLOAD_DIR, exist_ok=True)
+
+ALLOWED_IMAGE = {"png", "jpg", "jpeg", "webp", "gif", "svg"}
+ALLOWED_AUDIO = {"mp3", "ogg", "wav", "m4a"}
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 Mo max par upload
+
+
+@app.after_request
+def _cors(resp):
+    """CORS pour les routes HTTP appelées depuis la webview (upload, médias)."""
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Session-Token"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
+
+
+@app.route("/media/<path:filename>")
+def serve_media(filename):
+    """Sert un média : d'abord les fichiers bundlés (drapeaux…), sinon les uploads."""
+    if os.path.isfile(os.path.join(_MEDIA_BUNDLED, filename)):
+        return send_from_directory(_MEDIA_BUNDLED, filename)
+    return send_from_directory(_UPLOAD_DIR, filename)
+
+
+@app.route("/admin/upload", methods=["POST", "OPTIONS"])
+def admin_upload():
+    """Upload d'un média de question (admin). Renvoie {url, kind}."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    user = db.get_user_by_token(request.headers.get("X-Session-Token", ""))
+    if not is_admin(user):
+        return jsonify({"error": "réservé aux admins"}), 403
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"error": "aucun fichier"}), 400
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+    if ext in ALLOWED_IMAGE:
+        kind = "image"
+    elif ext in ALLOWED_AUDIO:
+        kind = "audio"
+    else:
+        return jsonify({"error": "type de fichier non autorisé"}), 400
+    name = f"{secrets.token_hex(16)}.{ext}"
+    f.save(os.path.join(_UPLOAD_DIR, name))
+    return jsonify({"url": f"/media/{name}", "kind": kind})
 
 
 def is_admin(user: dict | None) -> bool:
@@ -794,6 +858,70 @@ def ws_admin_catalog_delete(data):
         return {"error": "Impossible de supprimer un cosmétique par défaut."}
     db.catalog_delete(item_id)
     return {"ok": True, "catalog": db.catalog_all(include_disabled=True)}
+
+
+# ---- Banque de questions du Quiz (admin) ----
+
+VALID_QTYPES = ("text", "image", "audio", "images", "flag", "timeline", "petitbac")
+
+
+@socketio.on("admin_quiz_list")
+def ws_admin_quiz_list(_data=None):
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    return {"questions": db.quiz_all()}
+
+
+@socketio.on("admin_quiz_save")
+def ws_admin_quiz_save(data):
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    item = (data or {}).get("item") or {}
+    cat = str(item.get("category", "")).strip()
+    ans = str(item.get("answer", "")).strip()
+    qtype = item.get("type", "text")
+    question = str(item.get("question", "")).strip()
+    media = item.get("media") or ""
+    if qtype not in VALID_QTYPES:
+        return {"error": "type invalide"}
+    if not cat:
+        return {"error": "catégorie requise"}
+    if qtype != "petitbac" and not ans:
+        return {"error": "réponse requise"}
+    if qtype == "petitbac":
+        m = media if isinstance(media, dict) else {}
+        if not m.get("categories"):
+            return {"error": "au moins une catégorie requise"}
+    elif not question and not media:
+        return {"error": "texte de question ou média requis"}
+    alts = item.get("alt_answers", [])
+    if isinstance(alts, str):
+        alts = [a.strip() for a in alts.split(",") if a.strip()]
+    db.quiz_upsert({
+        "id": item.get("id"),
+        "category": cat,
+        "question": question,
+        "answer": ans,
+        "type": qtype,
+        "media": media,
+        "alt_answers": alts,
+        "auto": bool(item.get("auto")),
+        "enabled": bool(item.get("enabled", True)),
+    })
+    return {"ok": True, "questions": db.quiz_all()}
+
+
+@socketio.on("admin_quiz_delete")
+def ws_admin_quiz_delete(data):
+    me = current_user()
+    if not is_admin(me):
+        return {"error": "réservé aux admins"}
+    qid = (data or {}).get("id")
+    if qid:
+        db.quiz_delete(int(qid))
+    return {"ok": True, "questions": db.quiz_all()}
 
 
 if __name__ == "__main__":

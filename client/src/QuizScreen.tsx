@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CosmeticsMap, QuizView, QuizPlayer } from "./useSocial";
 import Avatar from "./components/Avatar";
 import { BorderedAvatar, VictoryEffect } from "./components/cosmetics";
+import QuizPrompt from "./components/QuizPrompt";
+import QuizTimeline from "./components/QuizTimeline";
 import { sound } from "./sound";
 
 type Props = {
@@ -117,7 +119,13 @@ export default function QuizScreen(props: Props) {
 function Answering({ view, isHost, act }: Props & { act: (a: object) => void }) {
   const q = view.question!;
   const qIndex = q.number - 1;
+  const isTimeline = q.type === "timeline";
+  const isPetitbac = q.type === "petitbac";
+  const tlMin = q.media?.min ?? 1000;
+  const tlMax = q.media?.max ?? 2025;
   const [text, setText] = useState("");
+  const [year, setYear] = useState(Math.round((tlMin + tlMax) / 2));
+  const [pbGrid, setPbGrid] = useState<Record<string, string>>({});
   const [secondsLeft, setSecondsLeft] = useState(view.duration ?? 30);
 
   const deadlineRef = useRef<number>(0);
@@ -126,6 +134,8 @@ function Answering({ view, isHost, act }: Props & { act: (a: object) => void }) 
   // (Re)cale le chrono local à chaque nouvelle question.
   useEffect(() => {
     setText("");
+    setYear(Math.round((tlMin + tlMax) / 2));
+    setPbGrid({});
     const left = view.time_left ?? view.duration ?? 30;
     deadlineRef.current = Date.now() + left * 1000;
     sound.play("your_turn");
@@ -152,11 +162,14 @@ function Answering({ view, isHost, act }: Props & { act: (a: object) => void }) 
   const answered = new Set(view.answered_ids ?? []);
   const submitted = view.your_answer != null;
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const t = text.trim();
+  function submitValue(val: string) {
+    const t = val.trim();
     if (!t) return;
     act({ type: "answer", index: qIndex, text: t });
+  }
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    submitValue(text);
   }
 
   return (
@@ -183,25 +196,57 @@ function Answering({ view, isHost, act }: Props & { act: (a: object) => void }) 
           <div className="quiz-timer-num mono">{secondsLeft}</div>
         </div>
 
+        {!isTimeline && !isPetitbac && <QuizPrompt media={q.media ?? null} />}
         <div className="quiz-question">{q.text}</div>
 
-        <form className="quiz-answer-form" onSubmit={submit}>
-          <div className={"quiz-answer-input" + (submitted ? " done" : "")}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="2">
-              <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
-            <input
-              value={text}
-              onChange={(e) => setText(e.currentTarget.value)}
-              placeholder={submitted ? "Modifie ta réponse…" : "Ta réponse…"}
-              maxLength={120}
-              autoFocus
-            />
+        {isPetitbac ? (
+          <div className="quiz-pb-answer">
+            <div className="quiz-pb-letter">
+              Lettre <span>{q.letter}</span>
+            </div>
+            <div className="quiz-pb-grid">
+              {(q.categories ?? []).map((cat) => (
+                <label key={cat} className="quiz-pb-field">
+                  <span className="quiz-pb-cat">{cat}</span>
+                  <input
+                    value={pbGrid[cat] ?? ""}
+                    onChange={(e) => setPbGrid((g) => ({ ...g, [cat]: e.currentTarget.value }))}
+                    placeholder={`${q.letter}…`}
+                    maxLength={40}
+                  />
+                </label>
+              ))}
+            </div>
+            <button className="quiz-answer-send" onClick={() => submitValue(JSON.stringify(pbGrid))}>
+              {submitted ? "Mettre à jour ma grille" : "Valider ma grille"}
+            </button>
           </div>
-          <button className="quiz-answer-send" disabled={!text.trim()}>
-            {submitted ? "Modifier" : "Valider"}
-          </button>
-        </form>
+        ) : isTimeline ? (
+          <div className="quiz-timeline-answer">
+            <QuizTimeline min={tlMin} max={tlMax} value={year} onChange={setYear} />
+            <button className="quiz-answer-send" onClick={() => submitValue(String(year))}>
+              {submitted ? "Modifier" : "Placer sur la frise"}
+            </button>
+          </div>
+        ) : (
+          <form className="quiz-answer-form" onSubmit={submit}>
+            <div className={"quiz-answer-input" + (submitted ? " done" : "")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="2">
+                <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+              <input
+                value={text}
+                onChange={(e) => setText(e.currentTarget.value)}
+                placeholder={submitted ? "Modifie ta réponse…" : "Ta réponse…"}
+                maxLength={120}
+                autoFocus
+              />
+            </div>
+            <button className="quiz-answer-send" disabled={!text.trim()}>
+              {submitted ? "Modifier" : "Valider"}
+            </button>
+          </form>
+        )}
 
         {submitted && (
           <div className="quiz-your-answer">
@@ -262,7 +307,7 @@ function Answering({ view, isHost, act }: Props & { act: (a: object) => void }) 
 
 /* -------------------------- PHASE CORRECTION -------------------------- */
 
-function Correcting({ view, isHost, act }: Props & { act: (a: object) => void }) {
+function Correcting({ view, isHost, myPlayerId, act }: Props & { act: (a: object) => void }) {
   const c = view.correction!;
   const cIndex = c.number - 1;
   const last = c.number >= view.total;
@@ -281,6 +326,10 @@ function Correcting({ view, isHost, act }: Props & { act: (a: object) => void })
 
   const votedPlayer = vote ? c.entries.find((e) => e.id === vote.player_id) : null;
 
+  if (c.type === "petitbac") {
+    return <PetitBacCorrection view={view} isHost={isHost} act={act} />;
+  }
+
   return (
     <div className="quiz-correct">
       <div className="quiz-correct-head">
@@ -291,6 +340,7 @@ function Correcting({ view, isHost, act }: Props & { act: (a: object) => void })
           </span>
         </div>
         <div className="quiz-correct-q">{c.text}</div>
+        <QuizPrompt media={c.media ?? null} size="small" />
         <div className="quiz-reference">
           <span className="quiz-ref-label">Réponse attendue</span>
           <span className="quiz-ref-value">{c.reference || "—"}</span>
@@ -299,6 +349,19 @@ function Correcting({ view, isHost, act }: Props & { act: (a: object) => void })
           <div className="quiz-spectator-note muted small">
             L'hôte dévoile les réponses… ({c.revealed_count}/{c.answerable_count})
           </div>
+        )}
+
+        {c.type === "timeline" && (
+          <QuizTimeline
+            min={c.media?.min ?? 1000}
+            max={c.media?.max ?? 2025}
+            markers={[
+              { year: parseInt(c.reference) || 0, label: "✓ " + c.reference, correct: true },
+              ...c.entries
+                .filter((e) => e.revealed && e.answer)
+                .map((e) => ({ year: parseInt(e.answer!) || 0, label: e.name, me: e.id === myPlayerId })),
+            ]}
+          />
         )}
       </div>
 
@@ -364,18 +427,18 @@ function Correcting({ view, isHost, act }: Props & { act: (a: object) => void })
               {isHost && e.revealed && e.has_answer && !vote ? (
                 <div className="quiz-grade-btns">
                   <button
-                    className={"quiz-grade good" + (e.grade === true ? " on" : "")}
+                    className={"quiz-grade good" + (e.grade === true ? " on" : "") + (e.grade == null && e.suggested === true ? " suggest" : "")}
                     onClick={() => act({ type: "grade", index: cIndex, player_id: e.id, correct: true })}
-                    title="Bonne réponse"
+                    title={e.suggested === true ? "Bonne réponse (suggéré)" : "Bonne réponse"}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
                   </button>
                   <button
-                    className={"quiz-grade bad" + (e.grade === false ? " on" : "")}
+                    className={"quiz-grade bad" + (e.grade === false ? " on" : "") + (e.grade == null && e.suggested === false ? " suggest" : "")}
                     onClick={() => act({ type: "grade", index: cIndex, player_id: e.id, correct: false })}
-                    title="Mauvaise réponse"
+                    title={e.suggested === false ? "Mauvaise réponse (suggéré)" : "Mauvaise réponse"}
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <path d="M18 6 6 18M6 6l12 12" />
@@ -432,6 +495,103 @@ function Correcting({ view, isHost, act }: Props & { act: (a: object) => void })
         <div className="quiz-correct-foot muted small">
           {vote ? "Vote en cours…" : "En attente de l'hôte…"}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------- CORRECTION PETIT BAC (matrice) ------------------- */
+
+function PetitBacCorrection({
+  view,
+  isHost,
+  act,
+}: {
+  view: QuizView;
+  isHost: boolean;
+  act: (a: object) => void;
+}) {
+  const c = view.correction!;
+  const cIndex = c.number - 1;
+  const last = c.number >= view.total;
+  const cats = c.categories ?? [];
+  const players = c.pb_players ?? [];
+
+  return (
+    <div className="quiz-correct">
+      <div className="quiz-correct-head">
+        <div className="quiz-qhead">
+          <span className="quiz-qcat">{c.category}</span>
+          <span className="quiz-qnum mono">
+            Correction {c.number}<span className="muted"> / {view.total}</span>
+          </span>
+        </div>
+        <div className="quiz-pb-corr-letter">
+          Petit Bac · lettre <span>{c.letter}</span>
+        </div>
+        {isHost ? (
+          <div className="quiz-spectator-note muted small">Clique un mot pour le valider / invalider.</div>
+        ) : (
+          <div className="quiz-spectator-note muted small">L'hôte valide les mots…</div>
+        )}
+      </div>
+
+      <div className="quiz-pb-matrix-wrap">
+        <table className="quiz-pb-matrix">
+          <thead>
+            <tr>
+              <th />
+              {cats.map((cat) => (
+                <th key={cat}>{cat}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((p) => (
+              <tr key={p.id}>
+                <td className="quiz-pb-pname">
+                  <Avatar url={p.avatar} name={p.name} size={24} />
+                  <span>{p.name}</span>
+                </td>
+                {cats.map((cat) => {
+                  const word = (p.grid[cat] || "").trim();
+                  const grade = p.grades[cat];
+                  const cls = "quiz-pb-cell" + (grade === true ? " good" : grade === false ? " bad" : "");
+                  if (!word) return <td key={cat} className="quiz-pb-cell empty">—</td>;
+                  return (
+                    <td key={cat} className={cls}>
+                      {isHost ? (
+                        <button
+                          className="quiz-pb-cellbtn"
+                          onClick={() =>
+                            act({ type: "grade_cell", index: cIndex, player_id: p.id, category: cat, correct: grade !== true })
+                          }
+                        >
+                          {word}
+                        </button>
+                      ) : (
+                        <span>{word}</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isHost ? (
+        <div className="quiz-correct-foot">
+          <button className="quiz-next-correction" onClick={() => act({ type: "next_correction" })}>
+            {last ? "Voir le classement" : "Question suivante"}
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <div className="quiz-correct-foot muted small">En attente de l'hôte…</div>
       )}
     </div>
   );

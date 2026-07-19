@@ -108,6 +108,14 @@ export type GameView = {
 
 // ---- Quiz Culture ----
 export type QuizPlayer = { id: string; name: string; avatar: string; connected: boolean };
+export type QuizMedia = {
+  kind: "image" | "audio" | "images" | "timeline" | "petitbac";
+  url?: string;
+  urls?: string[];
+  min?: number; // frise chronologique
+  max?: number;
+  categories?: string[]; // petit bac
+} | null;
 export type QuizEntry = {
   id: string;
   name: string;
@@ -116,6 +124,7 @@ export type QuizEntry = {
   has_answer: boolean;
   revealed: boolean;
   grade: boolean | null;
+  suggested?: boolean; // aide de l'hôte (auto-correction), l'hôte décide
 };
 export type QuizDoubt = {
   player_id: string;
@@ -124,6 +133,13 @@ export type QuizDoubt = {
   voted_ids: string[];
   your_vote: boolean | null;
   total: number;
+};
+export type PBPlayer = {
+  id: string;
+  name: string;
+  avatar: string;
+  grid: Record<string, string>;
+  grades: Record<string, boolean | null>;
 };
 export type QuizRankRow = { id: string; name: string; avatar: string; score: number; rank: number };
 export type QuizReviewRow = {
@@ -142,7 +158,10 @@ export type QuizView = {
   players: QuizPlayer[];
   scores: Record<string, number>;
   // answering
-  question?: { number: number; category: string; text: string };
+  question?: {
+    number: number; category: string; text: string; type?: string; media?: QuizMedia;
+    letter?: string; categories?: string[]; // petit bac
+  };
   duration?: number;
   time_left?: number;
   your_answer?: string | null;
@@ -155,11 +174,17 @@ export type QuizView = {
     category: string;
     text: string;
     reference: string;
+    type?: string;
+    media?: QuizMedia;
     entries: QuizEntry[];
     revealed_count: number;
     answerable_count: number;
     all_revealed: boolean;
     vote?: QuizDoubt;
+    // petit bac
+    letter?: string;
+    categories?: string[];
+    pb_players?: PBPlayer[];
   };
   // over
   ranking?: QuizRankRow[];
@@ -425,6 +450,25 @@ export function useSocial(loggedIn: boolean) {
     },
 
     profile,
+    // upload d'un média de question (admin) → {url, kind} ou {error}
+    uploadMedia: async (file: File): Promise<{ url?: string; kind?: string; error?: string }> => {
+      try {
+        const token = await invoke<string | null>("get_session_token");
+        if (!token) return { error: "Non authentifié" };
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(SERVER_URL.replace(/\/$/, "") + "/admin/upload", {
+          method: "POST",
+          headers: { "X-Session-Token": token },
+          body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { error: data.error || "Upload échoué" };
+        return data;
+      } catch (e) {
+        return { error: String(e) };
+      }
+    },
     // vitrine d'un autre joueur (ami / co-membre d'une table)
     viewProfile: (userId: number) =>
       new Promise<{ profile?: Profile; error?: string }>((resolve) => {

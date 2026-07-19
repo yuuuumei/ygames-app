@@ -9,9 +9,11 @@ Volontairement idempotent : tant que le bot a déjà agi pour l'état courant,
 il renvoie None (évite les actions en double).
 """
 
+import json
 import random
 
 CLUE_WORDS = ["truc", "machin", "vibe", "genre", "style", "concept", "délire"]
+PB_SUFFIXES = ["a", "o", "ri", "ex", "in", "or", "ette", "ien", "us"]
 QUIZ_ANSWERS = ["42", "Paris", "Napoléon", "je sais pas", "le chat", "1789",
                 "bleu", "Zidane", "au pif", "banane", "l'amour", "Google"]
 
@@ -31,7 +33,19 @@ def _quiz(view: dict, pid: str) -> dict | None:
     if phase == "answering" and view.get("question"):
         # répond une seule fois par question (your_answer se remplit ensuite)
         if view.get("your_answer") is None:
-            idx = view["question"]["number"] - 1
+            q = view["question"]
+            idx = q["number"] - 1
+            qtype = q.get("type", "text")
+            if qtype == "petitbac":
+                letter = q.get("letter", "A")
+                cats = q.get("categories", [])
+                fill = random.sample(cats, k=min(len(cats), random.randint(2, len(cats)))) if cats else []
+                grid = {c: letter + random.choice(PB_SUFFIXES) for c in fill}
+                return {"type": "answer", "index": idx, "text": json.dumps(grid)}
+            if qtype == "timeline":
+                m = q.get("media") or {}
+                return {"type": "answer", "index": idx,
+                        "text": str(random.randint(m.get("min", 1000), m.get("max", 2025)))}
             return {"type": "answer", "index": idx, "text": random.choice(QUIZ_ANSWERS)}
     elif phase == "correcting":
         # vote-doute en cours : le bot vote oui/non (majorité bienveillante)

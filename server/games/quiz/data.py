@@ -54,3 +54,43 @@ SEED_QUESTIONS = [
     {"category": "Général", "question": "Quelle planète est surnommée la planète rouge ?", "answer": "Mars"},
     {"category": "Général", "question": "Quel est le métal liquide à température ambiante ?", "answer": "Le mercure"},
 ]
+
+
+def _tl(question, year, lo, hi):
+    return {
+        "category": "Frise chrono", "question": question, "answer": str(year),
+        "type": "timeline", "auto": 1,
+        "media": {"kind": "timeline", "min": lo, "max": hi},
+    }
+
+
+# Dates célèbres à placer sur une frise chronologique.
+TIMELINE_QUESTIONS = [
+    _tl("Chute de l'Empire romain d'Occident", 476, 0, 1000),
+    _tl("Découverte de l'Amérique par Christophe Colomb", 1492, 1300, 1700),
+    _tl("Prise de la Bastille / Révolution française", 1789, 1600, 1900),
+    _tl("Déclaration d'indépendance des États-Unis", 1776, 1600, 1900),
+    _tl("Sacre de Napoléon empereur", 1804, 1700, 1900),
+    _tl("Début de la Première Guerre mondiale", 1914, 1850, 1950),
+    _tl("Fin de la Seconde Guerre mondiale", 1945, 1900, 2000),
+    _tl("Premier pas de l'Homme sur la Lune", 1969, 1900, 2025),
+    _tl("Chute du mur de Berlin", 1989, 1900, 2025),
+    _tl("Attentats du 11 septembre", 2001, 1950, 2025),
+]
+
+
+def _pb(cats):
+    return {
+        "category": "Petit Bac", "question": "Petit Bac !", "answer": "",
+        "type": "petitbac", "auto": 0,
+        "media": {"kind": "petitbac", "categories": cats},
+    }
+
+
+# Manches Petit Bac (la lettre est tirée au sort à chaque partie).
+PETITBAC_QUESTIONS = [
+    _pb(["Prénom", "Métier", "Sport", "Objet", "Pays", "Animal"]),
+    _pb(["Ville", "Fruit ou légume", "Marque", "Film", "Groupe/Chanteur", "Couleur"]),
+    _pb(["Prénom fille", "Prénom garçon", "Pays", "Capitale", "Animal", "Métier"]),
+    _pb(["Personnage de fiction", "Jeu vidéo", "Plat", "Instrument", "Île/Pays", "Verbe"]),
+]

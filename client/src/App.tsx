@@ -222,7 +222,7 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
 
   // Back-office admin (réservé, accessible depuis Mon profil).
   if (showProfile && adminOpen && social.profile?.is_admin && !social.lobby && !social.gameView) {
-    return <AdminScreen ask={social.ask} onClose={() => setAdminOpen(false)} />;
+    return <AdminScreen ask={social.ask} uploadMedia={social.uploadMedia} onClose={() => setAdminOpen(false)} />;
   }
 
   // Mon profil (accessible depuis l'accueil).

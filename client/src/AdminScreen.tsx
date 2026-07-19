@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { BorderedAvatar, VictoryEffect } from "./components/cosmetics";
+import AdminQuiz from "./AdminQuiz";
 import { toast } from "./toast";
 import { sound } from "./sound";
 
 type Ask = (event: string, data?: object) => Promise<any>;
+type Upload = (file: File) => Promise<{ url?: string; kind?: string; error?: string }>;
 type Slot = "title" | "border" | "effect";
 
 type CatalogRow = {
@@ -81,7 +83,16 @@ function newDraft(slot: Slot): Draft {
   };
 }
 
-export default function AdminScreen({ ask, onClose }: { ask: Ask; onClose: () => void }) {
+export default function AdminScreen({
+  ask,
+  onClose,
+  uploadMedia,
+}: {
+  ask: Ask;
+  onClose: () => void;
+  uploadMedia: Upload;
+}) {
+  const [tab, setTab] = useState<"cosmetics" | "quiz">("cosmetics");
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -127,20 +138,40 @@ export default function AdminScreen({ ask, onClose }: { ask: Ask; onClose: () =>
     setDraft((d) => (d ? { ...d, visual: { ...d.visual, ...patch } } : d));
   }
 
+  const headerNode = (
+    <div className="admin-head">
+      <button className="tbl-back" onClick={onClose} title="Retour">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+      <div className="admin-tabs">
+        <button className={"admin-tab" + (tab === "cosmetics" ? " active" : "")} onClick={() => setTab("cosmetics")}>
+          Cosmétiques
+        </button>
+        <button className={"admin-tab" + (tab === "quiz" ? " active" : "")} onClick={() => setTab("quiz")}>
+          Quiz
+        </button>
+      </div>
+    </div>
+  );
+
+  if (tab === "quiz") {
+    return (
+      <div className="admin">
+        <div className="ambient" />
+        <AdminQuiz ask={ask} uploadMedia={uploadMedia} header={headerNode} />
+      </div>
+    );
+  }
+
   return (
     <div className="admin">
       <div className="ambient" />
 
       {/* liste */}
       <section className="admin-list">
-        <div className="admin-head">
-          <button className="tbl-back" onClick={onClose} title="Retour">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-          </button>
-          <h1 className="admin-h1">Back-office · Cosmétiques</h1>
-        </div>
+        {headerNode}
 
         <div className="admin-scroll">
           {slots.map(({ slot, label }) => (

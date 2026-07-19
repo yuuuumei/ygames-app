@@ -17,13 +17,44 @@
 # ============================================================
 from __future__ import annotations
 
+import json
+import random
 import time
 
 import db
 from core.contract import Event, Game, GameMeta, Option, Player
 from core.registry import register
+from games.quiz.matching import is_correct
 
 POINTS_PER_CORRECT = 1  # points fixes par bonne réponse
+
+# Petit Bac : lettres « jouables » en français (on retire K/Q/W/X/Y/Z).
+PB_LETTERS = "ABCDEFGHIJLMNOPRSTUV"
+PB_DEFAULT_CATS = ["Prénom", "Métier", "Sport", "Objet", "Pays", "Animal"]
+
+
+def _parse(raw, default):
+    """Parse un champ JSON stocké en base (media / alt_answers)."""
+    if not raw:
+        return default
+    if isinstance(raw, (dict, list)):
+        return raw
+    try:
+        return json.loads(raw)
+    except (ValueError, TypeError):
+        return default
+
+
+def _year(s):
+    """Extrait une année (int) d'une chaîne, ou None."""
+    import re
+    m = re.search(r"-?\d{1,4}", str(s or ""))
+    return int(m.group()) if m else None
+
+
+def _year_close(answer, reference, tol: int = 3) -> bool:
+    a, r = _year(answer), _year(reference)
+    return a is not None and r is not None and abs(a - r) <= tol
 
 
 @register
@@ -81,6 +112,18 @@ class QuizGame(Game):
         #: vote-doute en cours : {"q", "pid", "votes": {voter -> bool}} ou None
         self.doubt: dict | None = None
 
+        # Petit Bac : lettre + catégories par question, et notes par cellule.
+        self.pb_letter: dict[int, str] = {}
+        self.pb_cats: dict[int, list[str]] = {}
+        #: q_index -> {player_id -> {catégorie -> bool}}
+        self.pb_grades: dict[int, dict[str, dict[str, bool]]] = {}
+        for i, q in enumerate(self.questions):
+            if q.get("type") == "petitbac":
+                self.pb_letter[i] = random.choice(PB_LETTERS)
+                m = _parse(q.get("media"), {}) or {}
+                cats = m.get("categories") if isinstance(m, dict) else None
+                self.pb_cats[i] = cats or PB_DEFAULT_CATS
+
         self.winners: list[str] = []
 
         if self.total == 0:
@@ -105,6 +148,10 @@ class QuizGame(Game):
         if kind == "grade":              # hôte corrige une réponse
             return self._grade(player_id, action.get("index"),
                                action.get("player_id"), action.get("correct"))
+        if kind == "grade_cell":         # hôte note une cellule de Petit Bac
+            return self._grade_cell(player_id, action.get("index"),
+                                    action.get("player_id"),
+                                    action.get("category"), action.get("correct"))
         if kind == "open_doubt":         # hôte : au vote sur une réponse
             return self._open_doubt(player_id, action.get("index"),
                                     action.get("player_id"))
@@ -140,7 +187,13 @@ class QuizGame(Game):
                 "number": self.q_index + 1,
                 "category": q["category"],
                 "text": q["question"],
+                "type": q.get("type", "text"),
+                "media": _parse(q.get("media"), None),
             }
+            if q.get("type") == "petitbac":
+                view["question"]["letter"] = self.pb_letter.get(self.q_index, "")
+                view["question"]["categories"] = self.pb_cats.get(
+                    self.q_index, PB_DEFAULT_CATS)
             view["duration"] = self.duration
             view["time_left"] = round(
                 max(0.0, self.duration - (time.time() - self.started_at)), 1)
@@ -160,25 +213,39 @@ class QuizGame(Game):
             rc = self.reveal_counts.get(ci, 0)
             revealed_ids = set(answered_order[:rc])
 
+            alts = _parse(q.get("alt_answers"), [])
+            if isinstance(alts, str):
+                alts = [a.strip() for a in alts.split(",") if a.strip()]
+
             entries = []
             for p in self.players.values():
                 ans = (answered.get(p.id) or "").strip()
                 has_answer = bool(ans)
                 # une réponse non-vide reste cachée tant qu'elle n'est pas dévoilée
                 shown = (not has_answer) or (p.id in revealed_ids)
-                entries.append({
+                entry = {
                     "id": p.id, "name": p.name, "avatar": p.avatar,
                     "answer": ans if shown else None,
                     "has_answer": has_answer,
                     "revealed": shown,
                     "grade": graded.get(p.id),   # True/False/None
-                })
+                }
+                # suggestion d'auto-correction : AIDE l'hôte, ne décide pas.
+                # Réservée à l'hôte, et seulement sur une réponse déjà dévoilée.
+                if is_host and shown and has_answer:
+                    if q.get("type") == "timeline":
+                        entry["suggested"] = _year_close(ans, q["answer"])
+                    else:
+                        entry["suggested"] = is_correct(ans, q["answer"], alts)
+                entries.append(entry)
 
             correction = {
                 "number": ci + 1,
                 "category": q["category"],
                 "text": q["question"],
                 "reference": q["answer"],
+                "type": q.get("type", "text"),
+                "media": _parse(q.get("media"), None),
                 "entries": entries,
                 "revealed_count": rc,
                 "answerable_count": len(answered_order),
@@ -196,6 +263,9 @@ class QuizGame(Game):
                     "your_vote": votes.get(player_id),  # True / False / None
                     "total": len(connected),
                 }
+            # Petit Bac : on attache la matrice (le client ignore alors `entries`).
+            if q.get("type") == "petitbac":
+                correction.update(self._pb_correction(ci))
             view["correction"] = correction
 
         elif self.phase == "over":
@@ -322,6 +392,42 @@ class QuizGame(Game):
                                  "player_id": target_id,
                                  "correct": bool(correct)})]
 
+    # -- Petit Bac -----------------------------------------------------
+    def _pb_correction(self, ci: int) -> dict:
+        """Données de correction Petit Bac (matrice joueurs × catégories)."""
+        cats = self.pb_cats.get(ci, PB_DEFAULT_CATS)
+        answered = self.answers.get(ci, {})
+        cell_grades = self.pb_grades.get(ci, {})
+        pb_players = []
+        for p in self.players.values():
+            grid = _parse(answered.get(p.id), {}) or {}
+            if not isinstance(grid, dict):
+                grid = {}
+            pb_players.append({
+                "id": p.id, "name": p.name, "avatar": p.avatar,
+                "grid": {c: str(grid.get(c, "")).strip() for c in cats},
+                "grades": {c: cell_grades.get(p.id, {}).get(c) for c in cats},
+            })
+        return {
+            "letter": self.pb_letter.get(ci, ""),
+            "categories": cats,
+            "pb_players": pb_players,
+            "all_revealed": True,  # pas de drip : on affiche toute la grille
+        }
+
+    def _grade_cell(self, player_id, index, target_id, category, correct) -> list[Event]:
+        if player_id != self.host_id or self.phase != "correcting":
+            return []
+        if index is None or int(index) != self.correction_index:
+            return []
+        if target_id not in self.players or not category:
+            return []
+        self.pb_grades.setdefault(self.correction_index, {}) \
+            .setdefault(target_id, {})[str(category)] = bool(correct)
+        return [Event("cell_graded", {
+            "index": self.correction_index, "player_id": target_id,
+            "category": category, "correct": bool(correct)})]
+
     def _open_doubt(self, player_id: str, index, target_id) -> list[Event]:
         """L'hôte lance un vote oui/non de tous les participants sur une réponse."""
         if player_id != self.host_id or self.phase != "correcting":
@@ -385,10 +491,16 @@ class QuizGame(Game):
     # -- calculs -------------------------------------------------------
     def _scores(self) -> dict[str, int]:
         scores = {pid: 0 for pid in self.players}
+        # questions classiques : 1 point par bonne réponse
         for grds in self.grades.values():
             for pid, ok in grds.items():
                 if ok and pid in scores:
                     scores[pid] += POINTS_PER_CORRECT
+        # Petit Bac : 1 point par cellule valide
+        for cells in self.pb_grades.values():
+            for pid, grid in cells.items():
+                if pid in scores:
+                    scores[pid] += sum(1 for ok in grid.values() if ok)
         return scores
 
     def _ranking(self) -> list[dict]:
@@ -414,6 +526,24 @@ class QuizGame(Game):
         for i, q in enumerate(self.questions):
             answered = self.answers.get(i, {})
             graded = self.grades.get(i, {})
+            if q.get("type") == "petitbac":
+                cells = self.pb_grades.get(i, {})
+                results = []
+                for p in self.players.values():
+                    grid = _parse(answered.get(p.id), {}) or {}
+                    g = cells.get(p.id, {})
+                    valid = [str(grid.get(c, "")).strip()
+                             for c in self.pb_cats.get(i, PB_DEFAULT_CATS)
+                             if g.get(c) and str(grid.get(c, "")).strip()]
+                    results.append({"id": p.id, "name": p.name,
+                                    "answer": ", ".join(valid) or "—",
+                                    "correct": len(valid) > 0})
+                review.append({
+                    "number": i + 1, "category": q["category"],
+                    "text": f"Petit Bac · lettre {self.pb_letter.get(i, '?')}",
+                    "reference": "", "results": results,
+                })
+                continue
             review.append({
                 "number": i + 1,
                 "category": q["category"],

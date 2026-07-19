@@ -6038,3 +6038,469 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ============================================================
+   QUIZ — média des questions (image / rébus / audio) + suggestion hôte
+   ============================================================ */
+.qp-media {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.qp-image img {
+  max-width: 340px;
+  max-height: 240px;
+  width: auto;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.03);
+}
+.qp-image.small img {
+  max-width: 180px;
+  max-height: 130px;
+}
+.qp-rebus {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-width: 320px;
+}
+.qp-rebus.small {
+  max-width: 190px;
+  gap: 5px;
+}
+.qp-rebus-cell {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.03);
+}
+.qp-rebus-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.qp-audio {
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(124, 108, 255, 0.1);
+  border: 1px solid rgba(124, 108, 255, 0.35);
+}
+.qp-audio-icon {
+  color: var(--accent-2);
+  display: grid;
+  place-items: center;
+}
+.qp-audio audio {
+  height: 36px;
+}
+
+/* bouton pré-suggéré à l'hôte (il décide quand même) */
+.quiz-grade.suggest {
+  border-style: dashed;
+  border-width: 2px;
+  animation: suggestPulse 1.6s ease-in-out infinite;
+}
+.quiz-grade.good.suggest {
+  border-color: #43d17a;
+}
+.quiz-grade.bad.suggest {
+  border-color: #ff4d5e;
+}
+@keyframes suggestPulse {
+  50% {
+    opacity: 0.65;
+  }
+}
+
+/* ============================================================
+   ADMIN — onglets (Cosmétiques / Quiz) + éditeur de questions
+   ============================================================ */
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+}
+.admin-tab {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--txt-2);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.admin-tab:hover {
+  color: #fff;
+}
+.admin-tab.active {
+  background: rgba(124, 108, 255, 0.16);
+  border-color: rgba(124, 108, 255, 0.5);
+  color: #fff;
+}
+
+/* badge type dans la liste des questions */
+.admin-qtype {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 12px;
+  background: rgba(124, 108, 255, 0.16);
+  color: #b8aeff;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  vertical-align: middle;
+}
+
+/* zone média de l'éditeur */
+.admin-media {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-media-drop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--line-2);
+  background: rgba(255, 255, 255, 0.02);
+}
+.admin-upload-btn {
+  margin-left: auto;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: rgba(124, 108, 255, 0.12);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.admin-upload-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.admin-upload-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* grille rébus (4 slots) */
+.admin-rebus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-width: 260px;
+}
+.admin-rebus-slot {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px dashed var(--line-2);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--txt-3);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.18s var(--ease);
+}
+.admin-rebus-slot:hover {
+  border-color: var(--accent);
+}
+.admin-rebus-slot .qp-media {
+  width: 100%;
+  height: 100%;
+}
+.admin-rebus-slot .qp-image img {
+  max-width: 100%;
+  max-height: 100%;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* ============================================================
+   QUIZ — frise chronologique (type timeline)
+   ============================================================ */
+.quiz-timeline-answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 620px;
+}
+.qtl {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.qtl-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--accent-2);
+}
+.qtl-track {
+  position: relative;
+  width: 100%;
+  height: 84px;
+}
+.qtl-axis {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line-2);
+}
+.qtl-tick {
+  position: absolute;
+  top: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.qtl-tick-line {
+  width: 1px;
+  height: 8px;
+  background: var(--txt-3);
+  margin-top: -4px;
+}
+.qtl-tick-label {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--txt-3);
+}
+.qtl-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+.qtl-marker-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--txt-2);
+  border: 2px solid #0c0e15;
+}
+.qtl-marker-label {
+  margin-bottom: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--txt-2);
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qtl-marker.correct {
+  transform: translate(-50%, 0);
+  z-index: 3;
+}
+.qtl-marker.correct .qtl-marker-dot {
+  background: #43d17a;
+  box-shadow: 0 0 0 4px rgba(67, 209, 122, 0.22);
+}
+.qtl-marker.correct .qtl-marker-label {
+  margin-bottom: 0;
+  margin-top: 3px;
+  color: #59e08c;
+}
+.qtl-marker.me .qtl-marker-dot {
+  background: var(--accent);
+}
+.qtl-marker.me .qtl-marker-label {
+  color: var(--accent-2);
+}
+.qtl-cursor {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #0c0e15;
+  box-shadow: 0 0 0 4px rgba(124, 108, 255, 0.25);
+  z-index: 3;
+  pointer-events: none;
+}
+.qtl-range {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* ============================================================
+   QUIZ — Petit Bac (grille de réponse + matrice de correction)
+   ============================================================ */
+.quiz-pb-answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 640px;
+}
+.quiz-pb-letter {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--txt-2);
+}
+.quiz-pb-letter span {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-left: 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #5a49e0);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+.quiz-pb-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.quiz-pb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.quiz-pb-cat {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--txt-3);
+  padding-left: 2px;
+}
+.quiz-pb-field input {
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--line-2);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.18s var(--ease);
+}
+.quiz-pb-field input:focus {
+  border-color: var(--accent);
+}
+
+/* correction — matrice */
+.quiz-pb-corr-letter {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--txt-2);
+}
+.quiz-pb-corr-letter span {
+  color: var(--accent-2);
+  font-weight: 800;
+  font-size: 18px;
+}
+.quiz-pb-matrix-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
+  padding: 14px 0;
+}
+.quiz-pb-matrix {
+  border-collapse: separate;
+  border-spacing: 6px;
+  margin: 0 auto;
+}
+.quiz-pb-matrix th {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--txt-3);
+  padding: 4px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+.quiz-pb-pname {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  padding-right: 8px;
+}
+.quiz-pb-cell {
+  text-align: center;
+}
+.quiz-pb-cell.empty {
+  color: var(--txt-3);
+  padding: 8px 12px;
+}
+.quiz-pb-cell > span,
+.quiz-pb-cellbtn {
+  display: inline-block;
+  min-width: 76px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--line);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+.quiz-pb-cellbtn {
+  cursor: pointer;
+  transition: all 0.14s var(--ease);
+}
+.quiz-pb-cellbtn:hover {
+  border-color: var(--accent);
+}
+.quiz-pb-cell.good > span,
+.quiz-pb-cell.good .quiz-pb-cellbtn {
+  background: rgba(67, 209, 122, 0.14);
+  border-color: #43d17a;
+  color: #8bf0b3;
+}
+.quiz-pb-cell.bad > span,
+.quiz-pb-cell.bad .quiz-pb-cellbtn {
+  background: rgba(255, 77, 94, 0.12);
+  border-color: rgba(255, 77, 94, 0.55);
+  color: #ff9aa4;
+  text-decoration: line-through;
+}

@@ -102,11 +102,19 @@ def init_db() -> None:
         -- Banque de questions du Quiz Culture. `answer` = réponse de
         -- référence (aide l'hôte à corriger ; réponses libres jugées à la main).
         CREATE TABLE IF NOT EXISTS quiz_questions (
-            id       INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL DEFAULT 'Général',
-            question TEXT NOT NULL,
-            answer   TEXT NOT NULL DEFAULT '',
-            enabled  INTEGER NOT NULL DEFAULT 1
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            category    TEXT NOT NULL DEFAULT 'Général',
+            question    TEXT NOT NULL,
+            answer      TEXT NOT NULL DEFAULT '',
+            enabled     INTEGER NOT NULL DEFAULT 1,
+            -- Type de question : text | image | audio | images | flag | petitbac | timeline
+            type        TEXT NOT NULL DEFAULT 'text',
+            -- Média du prompt (JSON) : {kind, url} ou {kind:'images', urls:[...]}
+            media       TEXT NOT NULL DEFAULT '',
+            -- Réponses alternatives acceptées (JSON liste) pour l'auto-correction
+            alt_answers TEXT NOT NULL DEFAULT '',
+            -- 1 = corrigé automatiquement (réponse objective) ; 0 = corrigé par l'hôte
+            auto        INTEGER NOT NULL DEFAULT 0
         );
 
         -- Historique des parties : une ligne par joueur et par partie terminée.
@@ -123,8 +131,20 @@ def init_db() -> None:
             ON match_history(user_id, played_at DESC);
         """
     )
+    # Migrations légères pour les bases déjà en prod (colonnes ajoutées après coup).
+    _add_column(conn, "quiz_questions", "type", "TEXT NOT NULL DEFAULT 'text'")
+    _add_column(conn, "quiz_questions", "media", "TEXT NOT NULL DEFAULT ''")
+    _add_column(conn, "quiz_questions", "alt_answers", "TEXT NOT NULL DEFAULT ''")
+    _add_column(conn, "quiz_questions", "auto", "INTEGER NOT NULL DEFAULT 0")
     conn.commit()
     conn.close()
+
+
+def _add_column(conn, table: str, column: str, decl: str) -> None:
+    """Ajoute une colonne si elle n'existe pas déjà (migration idempotente)."""
+    cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
 
 
 def _hash_token(token: str) -> str:
@@ -614,19 +634,36 @@ def quiz_all() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def _as_json(v) -> str:
+    """Sérialise dict/list en JSON ; laisse les chaînes telles quelles."""
+    if v is None:
+        return ""
+    if isinstance(v, (dict, list)):
+        return json.dumps(v, ensure_ascii=False)
+    return str(v)
+
+
 def quiz_upsert(item: dict) -> None:
     conn = get_db()
+    typ = item.get("type", "text")
+    media = _as_json(item.get("media", ""))
+    alt = _as_json(item.get("alt_answers", ""))
+    auto = 1 if item.get("auto") else 0
+    enabled = 1 if item.get("enabled", True) else 0
     if item.get("id"):
         conn.execute(
-            "UPDATE quiz_questions SET category=?, question=?, answer=?, enabled=? WHERE id=?",
-            (item["category"], item["question"], item.get("answer", ""),
-             1 if item.get("enabled", True) else 0, item["id"]),
+            "UPDATE quiz_questions SET category=?, question=?, answer=?, enabled=?, "
+            "type=?, media=?, alt_answers=?, auto=? WHERE id=?",
+            (item["category"], item["question"], item.get("answer", ""), enabled,
+             typ, media, alt, auto, item["id"]),
         )
     else:
         conn.execute(
-            "INSERT INTO quiz_questions (category, question, answer, enabled) VALUES (?, ?, ?, ?)",
-            (item["category"], item["question"], item.get("answer", ""),
-             1 if item.get("enabled", True) else 0),
+            "INSERT INTO quiz_questions "
+            "(category, question, answer, enabled, type, media, alt_answers, auto) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (item["category"], item["question"], item.get("answer", ""), enabled,
+             typ, media, alt, auto),
         )
     conn.commit()
     conn.close()
@@ -644,3 +681,20 @@ def seed_quiz(rows: list[dict]) -> None:
     if quiz_count() == 0 and rows:
         for r in rows:
             quiz_upsert(r)
+
+
+def seed_quiz_type(rows: list[dict], qtype: str) -> None:
+    """Seed des questions d'un type donné si aucune n'existe encore (idempotent)."""
+    conn = get_db()
+    n = conn.execute(
+        "SELECT COUNT(*) AS n FROM quiz_questions WHERE type = ?", (qtype,)
+    ).fetchone()["n"]
+    conn.close()
+    if n == 0 and rows:
+        for r in rows:
+            quiz_upsert(r)
+
+
+def seed_quiz_flags(rows: list[dict]) -> None:
+    """Seed les questions 'Drapeaux' si aucune n'existe encore (idempotent)."""
+    seed_quiz_type(rows, "flag")
