@@ -1,125 +1,100 @@
 """Catégorie « Langue étrangère » : une phrase se lance, on devine la langue.
 
-Type audio (réutilise le lecteur existant). Les MP3 sont générés via edge-tts
-(voix neuronales Microsoft) par tools/gen_languages.py, puis bundlés dans
-server/media/languages/. Réponse = la langue en français (l'auto-correction
-suggère, l'hôte tranche).
+Type audio. UNE seule phrase par langue, et chaque phrase est unique (jamais
+la même traduite dans deux langues). Les MP3 sont générés via edge-tts
+(tools/gen_languages.py) → server/media/languages/<slug>.mp3.
+Réponse = la langue en français (l'auto-correction suggère, l'hôte tranche).
 """
 
-# slug, nom FR (réponse), alternatives acceptées, voix edge-tts, 4 phrases.
+# slug | nom FR (réponse) | alternatives | voix edge-tts | phrase unique
 LANGUAGES = [
-    {"slug": "allemand", "answer": "Allemand", "alts": ["Deutsch", "German"],
-     "voice": "de-DE-KatjaNeural", "phrases": [
-        "Guten Morgen, wie geht es dir heute?",
-        "Ich hätte gerne einen Kaffee, bitte.",
-        "Heute ist das Wetter wirklich schön.",
-        "Wo ist der nächste Bahnhof?"]},
-    {"slug": "espagnol", "answer": "Espagnol", "alts": ["Español", "Spanish", "Castillan"],
-     "voice": "es-ES-ElviraNeural", "phrases": [
-        "Buenos días, ¿cómo estás hoy?",
-        "Quería un café, por favor.",
-        "Hoy hace muy buen tiempo.",
-        "¿Dónde está la estación más cercana?"]},
-    {"slug": "italien", "answer": "Italien", "alts": ["Italiano", "Italian"],
-     "voice": "it-IT-ElsaNeural", "phrases": [
-        "Buongiorno, come stai oggi?",
-        "Vorrei un caffè, per favore.",
-        "Oggi il tempo è bellissimo.",
-        "Dov'è la stazione più vicina?"]},
-    {"slug": "anglais", "answer": "Anglais", "alts": ["English", "Anglaise"],
-     "voice": "en-US-AriaNeural", "phrases": [
-        "Good morning, how are you today?",
-        "I'd like a coffee, please.",
-        "The weather is really nice today.",
-        "Where is the nearest train station?"]},
-    {"slug": "portugais", "answer": "Portugais", "alts": ["Português", "Portuguese", "Brésilien"],
-     "voice": "pt-BR-FranciscaNeural", "phrases": [
-        "Bom dia, como está hoje?",
-        "Queria um café, por favor.",
-        "Hoje está um tempo muito bom.",
-        "Onde fica a estação mais próxima?"]},
-    {"slug": "neerlandais", "answer": "Néerlandais", "alts": ["Nederlands", "Dutch", "Hollandais"],
-     "voice": "nl-NL-ColetteNeural", "phrases": [
-        "Goedemorgen, hoe gaat het vandaag met je?",
-        "Ik wil graag een koffie, alstublieft.",
-        "Het weer is vandaag echt mooi.",
-        "Waar is het dichtstbijzijnde station?"]},
-    {"slug": "suedois", "answer": "Suédois", "alts": ["Svenska", "Swedish"],
-     "voice": "sv-SE-SofieNeural", "phrases": [
-        "God morgon, hur mår du idag?",
-        "Jag skulle vilja ha en kaffe, tack.",
-        "Vädret är verkligen fint idag.",
-        "Var ligger närmaste station?"]},
-    {"slug": "polonais", "answer": "Polonais", "alts": ["Polski", "Polish"],
-     "voice": "pl-PL-ZofiaNeural", "phrases": [
-        "Dzień dobry, jak się dzisiaj masz?",
-        "Poproszę kawę.",
-        "Dzisiaj jest naprawdę ładna pogoda.",
-        "Gdzie jest najbliższy dworzec?"]},
-    {"slug": "russe", "answer": "Russe", "alts": ["Русский", "Russian"],
-     "voice": "ru-RU-SvetlanaNeural", "phrases": [
-        "Доброе утро, как у тебя дела сегодня?",
-        "Я бы хотел кофе, пожалуйста.",
-        "Сегодня очень хорошая погода.",
-        "Где находится ближайший вокзал?"]},
-    {"slug": "grec", "answer": "Grec", "alts": ["Ελληνικά", "Greek", "Grecque"],
-     "voice": "el-GR-AthinaNeural", "phrases": [
-        "Καλημέρα, πώς είσαι σήμερα;",
-        "Θα ήθελα έναν καφέ, παρακαλώ.",
-        "Σήμερα ο καιρός είναι πολύ ωραίος.",
-        "Πού είναι ο πλησιέστερος σταθμός;"]},
-    {"slug": "turc", "answer": "Turc", "alts": ["Türkçe", "Turkish", "Turque"],
-     "voice": "tr-TR-EmelNeural", "phrases": [
-        "Günaydın, bugün nasılsın?",
-        "Bir kahve istiyorum, lütfen.",
-        "Bugün hava gerçekten çok güzel.",
-        "En yakın istasyon nerede?"]},
-    {"slug": "japonais", "answer": "Japonais", "alts": ["日本語", "Japanese"],
-     "voice": "ja-JP-NanamiNeural", "phrases": [
-        "おはようございます、今日は元気ですか？",
-        "コーヒーを一杯ください。",
-        "今日はとても天気がいいですね。",
-        "一番近い駅はどこですか？"]},
-    {"slug": "chinois", "answer": "Chinois", "alts": ["中文", "Chinese", "Mandarin", "Chinois mandarin"],
-     "voice": "zh-CN-XiaoxiaoNeural", "phrases": [
-        "早上好，你今天怎么样？",
-        "我想要一杯咖啡，谢谢。",
-        "今天天气非常好。",
-        "最近的火车站在哪里？"]},
-    {"slug": "coreen", "answer": "Coréen", "alts": ["한국어", "Korean"],
-     "voice": "ko-KR-SunHiNeural", "phrases": [
-        "좋은 아침이에요, 오늘 어떻게 지내세요?",
-        "커피 한 잔 주세요.",
-        "오늘 날씨가 정말 좋아요.",
-        "가장 가까운 역이 어디예요?"]},
-    {"slug": "arabe", "answer": "Arabe", "alts": ["العربية", "Arabic"],
-     "voice": "ar-EG-SalmaNeural", "phrases": [
-        "صباح الخير، كيف حالك اليوم؟",
-        "أريد قهوة من فضلك.",
-        "الطقس جميل جدًا اليوم.",
-        "أين أقرب محطة؟"]},
-    {"slug": "hindi", "answer": "Hindi", "alts": ["हिन्दी", "Indien"],
-     "voice": "hi-IN-SwaraNeural", "phrases": [
-        "सुप्रभात, आज आप कैसे हैं?",
-        "मुझे एक कॉफ़ी चाहिए।",
-        "आज मौसम बहुत अच्छा है।",
-        "सबसे नज़दीकी स्टेशन कहाँ है?"]},
+    ("allemand", "Allemand", ["Deutsch", "German"], "de-DE-SeraphinaMultilingualNeural",
+     "Der Zug fährt in fünf Minuten ab."),
+    ("espagnol", "Espagnol", ["Español", "Spanish"], "es-ES-XimenaNeural",
+     "Me encanta bailar salsa los sábados."),
+    ("italien", "Italien", ["Italiano", "Italian"], "it-IT-GiuseppeMultilingualNeural",
+     "La pizza margherita è la mia preferita."),
+    ("anglais", "Anglais", ["English"], "en-US-AvaNeural",
+     "My brother works in a big hospital."),
+    ("portugais", "Portugais", ["Português", "Brésilien", "Portuguese"], "pt-BR-ThalitaMultilingualNeural",
+     "Vou à praia todos os domingos."),
+    ("neerlandais", "Néerlandais", ["Nederlands", "Dutch", "Hollandais"], "nl-NL-ColetteNeural",
+     "Ik fiets elke dag naar mijn werk."),
+    ("suedois", "Suédois", ["Svenska", "Swedish"], "sv-SE-MattiasNeural",
+     "På vintern gillar jag att åka skidor."),
+    ("norvegien", "Norvégien", ["Norsk", "Norwegian"], "nb-NO-FinnNeural",
+     "Fjellene i Norge er veldig vakre."),
+    ("danois", "Danois", ["Dansk", "Danish"], "da-DK-ChristelNeural",
+     "Jeg drikker altid te om morgenen."),
+    ("finnois", "Finnois", ["Suomi", "Finnish", "Finlandais"], "fi-FI-HarriNeural",
+     "Kesällä yöt ovat hyvin valoisia."),
+    ("islandais", "Islandais", ["Íslenska", "Icelandic"], "is-IS-GudrunNeural",
+     "Mér finnst gaman að synda í sjónum."),
+    ("polonais", "Polonais", ["Polski", "Polish"], "pl-PL-MarekNeural",
+     "Mój pies uwielbia biegać po parku."),
+    ("tcheque", "Tchèque", ["Čeština", "Czech"], "cs-CZ-AntoninNeural",
+     "Zítra půjdeme do kina."),
+    ("hongrois", "Hongrois", ["Magyar", "Hungarian"], "hu-HU-NoemiNeural",
+     "A gyerekek a kertben játszanak."),
+    ("roumain", "Roumain", ["Română", "Romanian"], "ro-RO-AlinaNeural",
+     "Îmi place să ascult muzică seara."),
+    ("russe", "Russe", ["Русский", "Russian"], "ru-RU-DmitryNeural",
+     "Зимой в Сибири очень холодно."),
+    ("ukrainien", "Ukrainien", ["Українська", "Ukrainian"], "uk-UA-OstapNeural",
+     "Я люблю читати книжки ввечері."),
+    ("grec", "Grec", ["Ελληνικά", "Greek", "Grecque"], "el-GR-NestorasNeural",
+     "Μου αρέσει πολύ ο ελληνικός καφές."),
+    ("turc", "Turc", ["Türkçe", "Turkish", "Turque"], "tr-TR-EmelNeural",
+     "Kedim bütün gün uyuyor."),
+    ("croate", "Croate", ["Hrvatski", "Croatian"], "hr-HR-GabrijelaNeural",
+     "Moja sestra svira gitaru."),
+    ("bulgare", "Bulgare", ["Български", "Bulgarian"], "bg-BG-BorislavNeural",
+     "Обичам да пия студена вода."),
+    ("catalan", "Catalan", ["Català", "Catalan"], "ca-ES-EnricNeural",
+     "M'agrada molt el pa amb tomàquet."),
+    ("japonais", "Japonais", ["日本語", "Japanese"], "ja-JP-KeitaNeural",
+     "この本はとても面白いです。"),
+    ("chinois", "Chinois", ["中文", "Chinese", "Mandarin"], "zh-CN-XiaoxiaoNeural",
+     "我每天早上跑步。"),
+    ("coreen", "Coréen", ["한국어", "Korean"], "ko-KR-HyunsuMultilingualNeural",
+     "저는 매운 음식을 좋아해요."),
+    ("thai", "Thaï", ["ไทย", "Thai", "Thaïlandais"], "th-TH-NiwatNeural",
+     "วันนี้อากาศร้อนมาก"),
+    ("vietnamien", "Vietnamien", ["Tiếng Việt", "Vietnamese"], "vi-VN-HoaiMyNeural",
+     "Tôi thích ăn phở vào buổi sáng."),
+    ("hindi", "Hindi", ["हिन्दी", "Indien"], "hi-IN-MadhurNeural",
+     "मुझे क्रिकेट खेलना बहुत पसंद है।"),
+    ("indonesien", "Indonésien", ["Bahasa Indonesia", "Indonesian"], "id-ID-ArdiNeural",
+     "Saya suka makan nasi goreng."),
+    ("arabe", "Arabe", ["العربية", "Arabic"], "ar-EG-SalmaNeural",
+     "القاهرة مدينة كبيرة وجميلة."),
+    ("hebreu", "Hébreu", ["עברית", "Hebrew", "Hebreu"], "he-IL-AvriNeural",
+     "בירושלים יש הרבה מקומות קדושים."),
+    ("persan", "Persan", ["فارسی", "Farsi", "Perse", "Iranien"], "fa-IR-DilaraNeural",
+     "این غذا خیلی خوشمزه است."),
+    ("swahili", "Swahili", ["Kiswahili"], "sw-KE-RafikiNeural",
+     "Simba anaishi katika savana."),
+    ("afrikaans", "Afrikaans", ["Sud-africain"], "af-ZA-AdriNeural",
+     "Ek hou daarvan om in die berge te stap."),
+    ("gallois", "Gallois", ["Cymraeg", "Welsh"], "cy-GB-AledNeural",
+     "Dw i'n hoffi canu yn y gawod."),
+    ("irlandais", "Irlandais", ["Gaeilge", "Irish", "Gaélique"], "ga-IE-ColmNeural",
+     "Tá an aimsir go breá inniu."),
 ]
 
 
 def language_questions() -> list[dict]:
-    out = []
-    for lang in LANGUAGES:
-        for i, _phrase in enumerate(lang["phrases"], 1):
-            out.append({
-                "category": "Langue étrangère",
-                "question": "Quelle langue est parlée ?",
-                "answer": lang["answer"],
-                "type": "audio", "auto": 1,
-                "alt_answers": lang["alts"],
-                "media": {"kind": "audio", "url": f"/media/languages/{lang['slug']}_{i}.mp3"},
-            })
-    return out
+    return [
+        {
+            "category": "Langue étrangère",
+            "question": "Quelle langue est parlée ?",
+            "answer": name,
+            "type": "audio", "auto": 1,
+            "alt_answers": alts,
+            "media": {"kind": "audio", "url": f"/media/languages/{slug}.mp3"},
+        }
+        for (slug, name, alts, _voice, _phrase) in LANGUAGES
+    ]
 
 
 LANGUAGE_QUESTIONS = language_questions()

@@ -1,9 +1,11 @@
 """Génère les MP3 de la catégorie « Langue étrangère » via edge-tts.
 
 Usage (depuis server/) :  python tools/gen_languages.py
-Produit server/media/languages/<slug>_<i>.mp3 pour chaque phrase.
+Produit server/media/languages/<slug>.mp3 (une phrase par langue).
+Vide d'abord le dossier des anciens .mp3.
 """
 import asyncio
+import glob
 import os
 import sys
 
@@ -16,16 +18,17 @@ DEST = os.path.join(os.path.dirname(__file__), "..", "media", "languages")
 
 async def main():
     os.makedirs(DEST, exist_ok=True)
+    for old in glob.glob(os.path.join(DEST, "*.mp3")):
+        os.remove(old)
     total = 0
-    for lang in LANGUAGES:
-        for i, phrase in enumerate(lang["phrases"], 1):
-            path = os.path.join(DEST, f"{lang['slug']}_{i}.mp3")
-            try:
-                await edge_tts.Communicate(phrase, lang["voice"]).save(path)
-                total += 1
-                print(f"OK  {lang['slug']}_{i}.mp3  ({lang['voice']})")
-            except Exception as e:  # noqa: BLE001
-                print(f"ERR {lang['slug']}_{i}  {lang['voice']}  -> {e}")
+    for slug, _name, _alts, voice, phrase in LANGUAGES:
+        path = os.path.join(DEST, f"{slug}.mp3")
+        try:
+            await edge_tts.Communicate(phrase, voice).save(path)
+            total += 1
+            print(f"OK  {slug}.mp3  ({voice})")
+        except Exception as e:  # noqa: BLE001
+            print(f"ERR {slug}  {voice}  -> {e}")
     print(f"--- {total} fichiers générés dans {os.path.abspath(DEST)}")
 
 

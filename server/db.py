@@ -733,18 +733,7 @@ def seed_quiz_flags(rows: list[dict]) -> None:
     seed_quiz_type(rows, "flag")
 
 
-def seed_quiz_batch(rows: list[dict], name: str) -> None:
-    """Applique un lot de questions UNE seule fois (versionné par `name`).
-    Permet d'agrandir la banque au fil des lots sans créer de doublons."""
-    conn = get_db()
-    done = conn.execute(
-        "SELECT 1 FROM seed_versions WHERE name = ?", (name,)
-    ).fetchone()
-    conn.close()
-    if done or not rows:
-        return
-    for r in rows:
-        quiz_upsert(r)
+def _mark_seed(name: str) -> None:
     conn = get_db()
     conn.execute(
         "INSERT OR IGNORE INTO seed_versions (name, applied_at) VALUES (?, ?)",
@@ -752,3 +741,36 @@ def seed_quiz_batch(rows: list[dict], name: str) -> None:
     )
     conn.commit()
     conn.close()
+
+
+def _seed_applied(name: str) -> bool:
+    conn = get_db()
+    done = conn.execute(
+        "SELECT 1 FROM seed_versions WHERE name = ?", (name,)
+    ).fetchone()
+    conn.close()
+    return bool(done)
+
+
+def seed_quiz_batch(rows: list[dict], name: str) -> None:
+    """Applique un lot de questions UNE seule fois (versionné par `name`).
+    Permet d'agrandir la banque au fil des lots sans créer de doublons."""
+    if _seed_applied(name) or not rows:
+        return
+    for r in rows:
+        quiz_upsert(r)
+    _mark_seed(name)
+
+
+def seed_quiz_replace(rows: list[dict], name: str, category: str) -> None:
+    """Comme seed_quiz_batch mais REMPLACE d'abord tout le contenu d'une
+    catégorie (utile quand on refait complètement un lot). Une seule fois."""
+    if _seed_applied(name):
+        return
+    conn = get_db()
+    conn.execute("DELETE FROM quiz_questions WHERE category = ?", (category,))
+    conn.commit()
+    conn.close()
+    for r in rows:
+        quiz_upsert(r)
+    _mark_seed(name)
