@@ -1,0 +1,193 @@
+"""Grosse banque de culture générale — mangas, séries, films, jeux vidéo,
+musique, histoire, géo, sciences, sport, divers.
+
+Chargée via `db.seed_quiz_batch(CULTURE_QUESTIONS, "culture_v1")` : idempotent
+et versionné, donc on peut ajouter d'autres lots (culture_v2…) plus tard sans
+doublon. Réponses libres, corrigées par l'hôte (les alternatives aident juste
+la suggestion d'auto-correction).
+"""
+
+
+def _q(cat, question, answer, *alts):
+    d = {"category": cat, "question": question, "answer": answer}
+    if alts:
+        d["alt_answers"] = list(alts)
+    return d
+
+
+CULTURE_QUESTIONS = [
+    # ------------------------------------------------ Manga & Anime
+    _q("Manga & Anime", "Comment s'appelle le capitaine des Chapeaux de paille dans One Piece ?", "Luffy", "Monkey D. Luffy"),
+    _q("Manga & Anime", "Quel est le rêve de Luffy dans One Piece ?", "Devenir le roi des pirates", "Roi des pirates"),
+    _q("Manga & Anime", "Quel est le rêve de Naruto ?", "Devenir Hokage", "Hokage"),
+    _q("Manga & Anime", "Quel démon-renard est scellé en Naruto ?", "Kyubi", "Le Renard à neuf queues", "Kurama"),
+    _q("Manga & Anime", "Comment s'appelle la transformation aux cheveux dorés dans Dragon Ball ?", "Super Saiyan", "Super Saïyen"),
+    _q("Manga & Anime", "Comment s'appelle le fils de Goku (l'aîné) ?", "Gohan", "Son Gohan"),
+    _q("Manga & Anime", "Quel objet tue en y écrivant un nom dans Death Note ?", "Le Death Note", "Death Note"),
+    _q("Manga & Anime", "Comment s'appelle le dieu de la mort de Light dans Death Note ?", "Ryuk", "Ryuuk"),
+    _q("Manga & Anime", "Comment s'appelle le héros de L'Attaque des Titans ?", "Eren", "Eren Jäger", "Eren Yeager"),
+    _q("Manga & Anime", "Comment s'appelle le héros de Demon Slayer ?", "Tanjiro", "Tanjiro Kamado"),
+    _q("Manga & Anime", "Comment s'appelle la sœur démon de Tanjiro ?", "Nezuko"),
+    _q("Manga & Anime", "Comment s'appelle le héros de Jujutsu Kaisen ?", "Yuji Itadori", "Itadori"),
+    _q("Manga & Anime", "Quel roi des fléaux Yuji héberge-t-il ?", "Sukuna"),
+    _q("Manga & Anime", "Comment s'appelle le pouvoir hérité par Deku dans My Hero Academia ?", "One For All"),
+    _q("Manga & Anime", "Quels deux frères cherchent la pierre philosophale dans Fullmetal Alchemist ?", "Edward et Alphonse Elric", "Les frères Elric"),
+    _q("Manga & Anime", "Comment s'appelle le héros shinigami de Bleach ?", "Ichigo", "Ichigo Kurosaki"),
+    _q("Manga & Anime", "Comment s'appelle le héros de Hunter x Hunter ?", "Gon", "Gon Freecss"),
+    _q("Manga & Anime", "Quel Pokémon porte le numéro 1 du Pokédex ?", "Bulbizarre"),
+    _q("Manga & Anime", "Quel Pokémon accompagne toujours Sacha ?", "Pikachu"),
+    _q("Manga & Anime", "Comment s'appelle le héros de l'anime Pokémon ?", "Sacha", "Ash"),
+    _q("Manga & Anime", "Comment s'appelle le héros qui gagne en un coup dans One Punch Man ?", "Saitama"),
+    _q("Manga & Anime", "Comment s'appelle le héros à l'épée géante dans Berserk ?", "Guts"),
+    _q("Manga & Anime", "Quel est le nom de la famille au cœur de la saga JoJo ?", "Joestar"),
+    _q("Manga & Anime", "Comment s'appelle le chat bleu volant de Natsu dans Fairy Tail ?", "Happy"),
+    _q("Manga & Anime", "Qui a réalisé Le Voyage de Chihiro ?", "Hayao Miyazaki", "Miyazaki"),
+    _q("Manga & Anime", "Dans quel film Ghibli apparaît la créature Totoro ?", "Mon voisin Totoro", "Totoro"),
+    _q("Manga & Anime", "Comment s'appelle le carnet dans lequel Light écrit ?", "Le Death Note", "Death Note"),
+    _q("Manga & Anime", "Dans quel manga trouve-t-on le Rasengan ?", "Naruto"),
+    _q("Manga & Anime", "Combien d'épées Zoro manie-t-il en même temps dans One Piece ?", "Trois", "3"),
+    _q("Manga & Anime", "Quel fruit du démon a mangé Luffy ?", "Le Gomu Gomu", "Fruit du caoutchouc"),
+
+    # ------------------------------------------------ Séries
+    _q("Séries", "Quelle maison a pour devise « Winter is coming » dans Game of Thrones ?", "Stark", "Maison Stark"),
+    _q("Séries", "Comment est surnommée Daenerys, la mère des dragons ?", "Daenerys", "Khaleesi", "Daenerys Targaryen"),
+    _q("Séries", "Quel est l'alias de Walter White dans Breaking Bad ?", "Heisenberg"),
+    _q("Séries", "Que fabrique Walter White dans Breaking Bad ?", "De la méthamphétamine", "De la drogue", "Meth"),
+    _q("Séries", "Comment s'appelle la fille aux pouvoirs dans Stranger Things ?", "Eleven", "Onze", "El"),
+    _q("Séries", "Dans quelle ville se déroule Stranger Things ?", "Hawkins"),
+    _q("Séries", "Comment s'appelle le café où se retrouvent les amis dans Friends ?", "Central Perk"),
+    _q("Séries", "Quel est le surnom du cerveau du braquage dans La Casa de Papel ?", "Le Professeur", "Professeur"),
+    _q("Séries", "Quel masque portent les braqueurs de La Casa de Papel ?", "Dalí", "Salvador Dalí"),
+    _q("Séries", "Comment s'appelle la famille au centre de Peaky Blinders ?", "Shelby"),
+    _q("Séries", "Comment s'appelle le héros qui veut évader son frère dans Prison Break ?", "Michael Scofield", "Scofield"),
+    _q("Séries", "Contre quoi luttent les survivants dans The Walking Dead ?", "Les zombies", "Les rôdeurs", "Zombies"),
+    _q("Séries", "De quel pays vient la série Squid Game ?", "Corée du Sud", "Corée"),
+    _q("Séries", "Quel jeu d'enfants ouvre Squid Game ?", "1, 2, 3 soleil", "Un deux trois soleil"),
+    _q("Séries", "Comment s'appelle le sorceleur de The Witcher ?", "Geralt", "Geralt de Riv"),
+    _q("Séries", "Quel acteur incarne Sherlock dans la série de la BBC ?", "Benedict Cumberbatch"),
+    _q("Séries", "Comment s'appelle le héros légendaire de la série Vikings ?", "Ragnar", "Ragnar Lothbrok"),
+    _q("Séries", "Quel acteur joue Assane Diop dans Lupin ?", "Omar Sy"),
+    _q("Séries", "Quel personnage adorable accompagne le héros dans The Mandalorian ?", "Grogu", "Baby Yoda"),
+    _q("Séries", "De quelle célèbre famille vient Mercredi (Wednesday) ?", "La famille Addams", "Addams"),
+    _q("Séries", "Combien d'amis principaux dans la série Friends ?", "6", "Six"),
+    _q("Séries", "Qui raconte l'histoire dans How I Met Your Mother ?", "Ted", "Ted Mosby"),
+    _q("Séries", "Quel est le métier de couverture de Dexter ?", "Analyste de sang", "Expert en éclaboussures de sang"),
+    _q("Séries", "Quel est le nom du patron incompétent dans The Office (version US) ?", "Michael Scott", "Michael"),
+    _q("Séries", "Quelle série d'anticipation créée par Charlie Brooker explore les dérives de la technologie ?", "Black Mirror"),
+
+    # ------------------------------------------------ Cinéma
+    _q("Cinéma", "Quel acteur joue Jack dans Titanic ?", "Leonardo DiCaprio", "DiCaprio"),
+    _q("Cinéma", "Qui est le père de Luke Skywalker ?", "Dark Vador", "Anakin", "Anakin Skywalker"),
+    _q("Cinéma", "Comment s'appelle le petit maître Jedi vert et sage ?", "Yoda"),
+    _q("Cinéma", "Comment s'appelle l'école de magie dans Harry Potter ?", "Poudlard", "Hogwarts"),
+    _q("Cinéma", "Qui est le principal ennemi de Harry Potter ?", "Voldemort"),
+    _q("Cinéma", "Comment s'appelle le sport sur balais dans Harry Potter ?", "Le Quidditch", "Quidditch"),
+    _q("Cinéma", "Qui doit détruire l'Anneau dans Le Seigneur des Anneaux ?", "Frodon", "Frodo"),
+    _q("Cinéma", "Quel méchant veut réunir les pierres d'infinité dans Avengers ?", "Thanos"),
+    _q("Cinéma", "Comment s'appelle le marteau de Thor ?", "Mjöllnir", "Mjolnir"),
+    _q("Cinéma", "Comment s'appelle le lionceau héros du Roi Lion ?", "Simba"),
+    _q("Cinéma", "Comment s'appelle le père de Simba ?", "Mufasa"),
+    _q("Cinéma", "Quel véhicule voyage dans le temps dans Retour vers le futur ?", "La DeLorean", "DeLorean"),
+    _q("Cinéma", "Quelle pilule Neo choisit-il dans Matrix ?", "La rouge", "Rouge"),
+    _q("Cinéma", "Quelle famille mafieuse est au cœur du Parrain ?", "Corleone"),
+    _q("Cinéma", "Quels animaux reviennent à la vie dans Jurassic Park ?", "Les dinosaures", "Dinosaures"),
+    _q("Cinéma", "Qui a réalisé Pulp Fiction ?", "Quentin Tarantino", "Tarantino"),
+    _q("Cinéma", "Qui a réalisé Interstellar et Inception ?", "Christopher Nolan", "Nolan"),
+    _q("Cinéma", "Quel acteur a gagné l'Oscar pour son rôle du Joker (2019) ?", "Joaquin Phoenix"),
+    _q("Cinéma", "Quel duo est au cœur du film Intouchables ?", "Driss et Philippe", "Omar Sy et François Cluzet"),
+    _q("Cinéma", "Comment s'appelle la reine aux pouvoirs de glace dans La Reine des Neiges ?", "Elsa"),
+    _q("Cinéma", "Quel animal accompagne Shrek ?", "L'âne", "Donkey", "L'Âne"),
+    _q("Cinéma", "Quelle est l'identité secrète de Spider-Man ?", "Peter Parker"),
+    _q("Cinéma", "Dans quel film entend-on « Je suis ton père » ?", "Star Wars", "L'Empire contre-attaque"),
+    _q("Cinéma", "Quel réalisateur est connu pour la trilogie du Seigneur des Anneaux ?", "Peter Jackson"),
+    _q("Cinéma", "Quel film d'animation met en scène un rat cuisinier ?", "Ratatouille"),
+    _q("Cinéma", "Quel poisson-clown est recherché par son père dans un Pixar ?", "Nemo", "Le Monde de Nemo"),
+
+    # ------------------------------------------------ Jeux vidéo
+    _q("Jeux vidéo", "Comment s'appelle la princesse que Mario doit sauver ?", "Peach", "Princesse Peach"),
+    _q("Jeux vidéo", "Quel est le grand ennemi de Mario ?", "Bowser"),
+    _q("Jeux vidéo", "Comment s'appelle le héros de la saga Zelda ?", "Link"),
+    _q("Jeux vidéo", "Quel monstre vert explose au contact du joueur dans Minecraft ?", "Le Creeper", "Creeper"),
+    _q("Jeux vidéo", "Que signifie le sigle GTA ?", "Grand Theft Auto"),
+    _q("Jeux vidéo", "Comment s'appelle le hérisson bleu de SEGA ?", "Sonic"),
+    _q("Jeux vidéo", "Comment appelle-t-on le traître dans Among Us ?", "L'imposteur", "Imposteur"),
+    _q("Jeux vidéo", "Comment abrège-t-on League of Legends ?", "LoL"),
+    _q("Jeux vidéo", "Quel studio a créé Overwatch et World of Warcraft ?", "Blizzard"),
+    _q("Jeux vidéo", "Quelle arme cachée est emblématique d'Assassin's Creed ?", "La lame secrète", "Lame cachée"),
+    _q("Jeux vidéo", "Dans quel jeu construit-on tout en blocs cubiques ?", "Minecraft"),
+    _q("Jeux vidéo", "Comment s'appelle la mascotte plombière de Nintendo ?", "Mario"),
+    _q("Jeux vidéo", "Quel jeu de battle royale a popularisé la « danse floss » ?", "Fortnite"),
+    _q("Jeux vidéo", "Quel personnage jaune mange des pac-gommes ?", "Pac-Man"),
+    _q("Jeux vidéo", "Quelle société a créé la PlayStation ?", "Sony"),
+
+    # ------------------------------------------------ Musique
+    _q("Musique", "Qui est surnommé le « King of Pop » ?", "Michael Jackson"),
+    _q("Musique", "Quelle chanteuse a chanté « Umbrella » ?", "Rihanna"),
+    _q("Musique", "Quel groupe suédois a chanté « Dancing Queen » ?", "ABBA"),
+    _q("Musique", "Qui a chanté « Shape of You » ?", "Ed Sheeran"),
+    _q("Musique", "Quelle chanteuse a fait « Bad Guy » ?", "Billie Eilish"),
+    _q("Musique", "Quel groupe de K-pop est le plus connu au monde ?", "BTS"),
+    _q("Musique", "Qui a composé « Für Elise » et la 9e symphonie ?", "Beethoven"),
+    _q("Musique", "Combien y avait-il de membres dans les Beatles ?", "4", "Quatre"),
+    _q("Musique", "Quel DJ français a produit « Titanium » avec Sia ?", "David Guetta"),
+    _q("Musique", "Quel artiste belge a chanté « Formidable » et « Alors on danse » ?", "Stromae"),
+    _q("Musique", "Quel groupe a chanté « Smells Like Teen Spirit » ?", "Nirvana"),
+    _q("Musique", "Quelle chanteuse est surnommée « Queen B » ?", "Beyoncé"),
+
+    # ------------------------------------------------ Histoire
+    _q("Histoire", "Qui était le premier président des États-Unis ?", "George Washington", "Washington"),
+    _q("Histoire", "Qui a peint la Joconde ?", "Léonard de Vinci", "Léonard De Vinci"),
+    _q("Histoire", "En quelle année a coulé le Titanic ?", "1912"),
+    _q("Histoire", "Quelle civilisation a bâti les pyramides de Gizeh ?", "Les Égyptiens", "L'Égypte antique", "Égypte"),
+    _q("Histoire", "Quelle guerre opposa le Nord et le Sud des États-Unis ?", "La guerre de Sécession", "Guerre de Sécession"),
+    _q("Histoire", "Qui a mené la première traversée de l'Atlantique vers l'Amérique en 1492 ?", "Christophe Colomb", "Colomb"),
+    _q("Histoire", "Quel empereur français a été exilé à Sainte-Hélène ?", "Napoléon", "Napoléon Bonaparte"),
+    _q("Histoire", "Quelle statue New-Yorkaise fut offerte par la France ?", "La statue de la Liberté", "Statue de la Liberté"),
+
+    # ------------------------------------------------ Géographie
+    _q("Géographie", "Quelle est la plus haute montagne du monde ?", "L'Everest", "Everest", "Mont Everest"),
+    _q("Géographie", "Quel est le plus grand océan du monde ?", "L'océan Pacifique", "Pacifique"),
+    _q("Géographie", "Quelle est la capitale du Japon ?", "Tokyo"),
+    _q("Géographie", "Quel pays a la forme d'une botte ?", "L'Italie", "Italie"),
+    _q("Géographie", "Quel est le plus petit État du monde ?", "Le Vatican", "Vatican"),
+    _q("Géographie", "Quelle est la capitale du Canada ?", "Ottawa"),
+    _q("Géographie", "Sur quel continent se trouve l'Égypte ?", "L'Afrique", "Afrique"),
+    _q("Géographie", "Quel fleuve traverse Paris ?", "La Seine", "Seine"),
+    _q("Géographie", "Quelle est la capitale de l'Espagne ?", "Madrid"),
+    _q("Géographie", "Quel désert est le plus grand désert chaud du monde ?", "Le Sahara", "Sahara"),
+
+    # ------------------------------------------------ Sciences
+    _q("Sciences", "Combien d'os compte le corps humain adulte ?", "206"),
+    _q("Sciences", "Quel gaz les plantes absorbent-elles pour la photosynthèse ?", "Le dioxyde de carbone", "CO2", "Dioxyde de carbone"),
+    _q("Sciences", "Quelle est la planète la plus proche du Soleil ?", "Mercure"),
+    _q("Sciences", "Combien de dents a un adulte (dents de sagesse comprises) ?", "32"),
+    _q("Sciences", "Quel est l'élément chimique le plus léger ?", "L'hydrogène", "Hydrogène"),
+    _q("Sciences", "Quelle est la formule chimique de l'eau ?", "H2O"),
+    _q("Sciences", "Quel est le plus grand animal du monde ?", "La baleine bleue", "Baleine bleue"),
+    _q("Sciences", "Quel organe filtre le sang et produit l'urine ?", "Les reins", "Le rein", "Reins"),
+    _q("Sciences", "Combien de chromosomes possède l'être humain ?", "46"),
+    _q("Sciences", "Quelle force nous attire vers le sol ?", "La gravité", "Gravité", "La pesanteur"),
+
+    # ------------------------------------------------ Sport
+    _q("Sport", "Combien de joueurs sur le terrain dans une équipe de basket ?", "5", "Cinq"),
+    _q("Sport", "Quel joueur portugais est surnommé CR7 ?", "Cristiano Ronaldo", "Ronaldo"),
+    _q("Sport", "Combien de trous sur un parcours de golf classique ?", "18"),
+    _q("Sport", "Dans quel sport marque-t-on un « touchdown » ?", "Le football américain", "Football américain"),
+    _q("Sport", "Quel pays a remporté la Coupe du monde de foot 2022 ?", "L'Argentine", "Argentine"),
+    _q("Sport", "Combien de joueurs dans une équipe de foot sur le terrain ?", "11", "Onze"),
+    _q("Sport", "Quel sport pratique Rafael Nadal ?", "Le tennis", "Tennis"),
+    _q("Sport", "Dans quel sport utilise-t-on un « slam dunk » ?", "Le basket", "Basket-ball", "Basket"),
+
+    # ------------------------------------------------ Général
+    _q("Général", "Combien de couleurs dans un arc-en-ciel ?", "7", "Sept"),
+    _q("Général", "Quelle est la monnaie du Japon ?", "Le yen", "Yen"),
+    _q("Général", "Combien de cartes dans un jeu de 52 (sans les jokers) ?", "52"),
+    _q("Général", "Quel est le plus grand mammifère terrestre ?", "L'éléphant", "Éléphant"),
+    _q("Général", "Combien de pattes a une araignée ?", "8", "Huit"),
+    _q("Général", "Combien de côtés a un hexagone ?", "6", "Six"),
+    _q("Général", "Quelle est la monnaie utilisée en France ?", "L'euro", "Euro"),
+    _q("Général", "Combien de secondes dans une minute ?", "60"),
+    _q("Général", "Quel est l'animal terrestre le plus rapide ?", "Le guépard", "Guépard"),
+    _q("Général", "Combien de touches possède un piano classique ?", "88"),
+    _q("Général", "Quelle planète est surnommée la planète rouge ?", "Mars"),
+]

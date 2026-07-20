@@ -79,6 +79,27 @@ TIMELINE_QUESTIONS = [
 ]
 
 
+def _animal(file, answer, alts):
+    return {
+        "category": "Bruits d'animaux", "question": "Quel animal fait ce bruit ?",
+        "answer": answer, "type": "audio", "auto": 1, "alt_answers": alts,
+        "media": {"kind": "audio", "url": f"/media/animals/{file}"},
+    }
+
+
+# Bruits d'animaux (pack bundlé server/media/animals/).
+ANIMAL_QUESTIONS = [
+    _animal("crow1.wav", "Corbeau", ["Corneille"]),
+    _animal("crow2.wav", "Corbeau", ["Corneille"]),
+    _animal("geese.wav", "Oie", ["Oies"]),
+    _animal("goat.wav", "Chèvre", ["Bouc", "Biquette"]),
+    _animal("hawk.wav", "Faucon", ["Rapace", "Buse", "Aigle"]),
+    _animal("sheep.wav", "Mouton", ["Brebis", "Moutons"]),
+    _animal("pigs.wav", "Cochon", ["Porc", "Cochons"]),
+    _animal("owl.wav", "Hibou", ["Chouette"]),
+]
+
+
 def _pb(cats):
     return {
         "category": "Petit Bac", "question": "Petit Bac !", "answer": "",

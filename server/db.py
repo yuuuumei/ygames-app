@@ -129,6 +129,12 @@ def init_db() -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_history_user
             ON match_history(user_id, played_at DESC);
+
+        -- Lots de seed déjà appliqués (pour grossir la banque sans doublon).
+        CREATE TABLE IF NOT EXISTS seed_versions (
+            name       TEXT PRIMARY KEY,
+            applied_at INTEGER NOT NULL
+        );
         """
     )
     # Migrations légères pour les bases déjà en prod (colonnes ajoutées après coup).
@@ -610,21 +616,41 @@ def quiz_categories() -> list[str]:
     return [r["category"] for r in rows]
 
 
+# En mode « aléatoire », on plafonne certains types spéciaux pour ne pas
+# noyer la partie (max 2 drapeaux, 2 frises, 2 sons d'animaux).
+QUIZ_TYPE_CAPS = {"flag": 2, "timeline": 2, "audio": 2}
+
+
 def quiz_random(n: int, category: str | None = None) -> list[dict]:
-    """Tire n questions au hasard (optionnellement d'une catégorie)."""
+    """Tire n questions au hasard. Sur une catégorie précise, pas de plafond.
+    En « aléatoire », les types spéciaux (drapeau/frise/son) sont plafonnés."""
     conn = get_db()
     if category:
         rows = conn.execute(
             "SELECT * FROM quiz_questions WHERE enabled = 1 AND category = ? ORDER BY RANDOM() LIMIT ?",
             (category, n),
         ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM quiz_questions WHERE enabled = 1 ORDER BY RANDOM() LIMIT ?",
-            (n,),
-        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    # Aléatoire : on parcourt tout au hasard et on remplit en respectant les plafonds.
+    rows = conn.execute(
+        "SELECT * FROM quiz_questions WHERE enabled = 1 ORDER BY RANDOM()"
+    ).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    out: list[dict] = []
+    counts: dict[str, int] = {}
+    for r in rows:
+        t = r["type"] or "text"
+        cap = QUIZ_TYPE_CAPS.get(t)
+        if cap is not None:
+            if counts.get(t, 0) >= cap:
+                continue
+            counts[t] = counts.get(t, 0) + 1
+        out.append(dict(r))
+        if len(out) >= n:
+            break
+    return out
 
 
 def quiz_all() -> list[dict]:
@@ -698,3 +724,24 @@ def seed_quiz_type(rows: list[dict], qtype: str) -> None:
 def seed_quiz_flags(rows: list[dict]) -> None:
     """Seed les questions 'Drapeaux' si aucune n'existe encore (idempotent)."""
     seed_quiz_type(rows, "flag")
+
+
+def seed_quiz_batch(rows: list[dict], name: str) -> None:
+    """Applique un lot de questions UNE seule fois (versionné par `name`).
+    Permet d'agrandir la banque au fil des lots sans créer de doublons."""
+    conn = get_db()
+    done = conn.execute(
+        "SELECT 1 FROM seed_versions WHERE name = ?", (name,)
+    ).fetchone()
+    conn.close()
+    if done or not rows:
+        return
+    for r in rows:
+        quiz_upsert(r)
+    conn = get_db()
+    conn.execute(
+        "INSERT OR IGNORE INTO seed_versions (name, applied_at) VALUES (?, ?)",
+        (name, int(time.time())),
+    )
+    conn.commit()
+    conn.close()

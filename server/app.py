@@ -44,12 +44,16 @@ from games.quiz.data import (  # noqa: E402
     SEED_QUESTIONS as _QUIZ_SEED,
     TIMELINE_QUESTIONS as _TL_SEED,
     PETITBAC_QUESTIONS as _PB_SEED,
+    ANIMAL_QUESTIONS as _ANIMAL_SEED,
 )
 db.seed_quiz(_QUIZ_SEED)  # remplit la banque du Quiz au 1er lancement
 db.seed_quiz_type(_TL_SEED, "timeline")  # catégorie Frise chrono au 1er lancement
 db.seed_quiz_type(_PB_SEED, "petitbac")  # manches Petit Bac au 1er lancement
+db.seed_quiz_type(_ANIMAL_SEED, "audio")  # catégorie Bruits d'animaux au 1er lancement
 from games.quiz.flags_data import FLAG_QUESTIONS as _FLAG_SEED  # noqa: E402
 db.seed_quiz_flags(_FLAG_SEED)  # catégorie Drapeaux (auto) au 1er lancement
+from games.quiz.culture_data import CULTURE_QUESTIONS as _CULTURE_SEED  # noqa: E402
+db.seed_quiz_batch(_CULTURE_SEED, "culture_v1")  # gros lot culture (mangas/séries/films…)
 
 # Médias des questions : drapeaux BUNDLÉS (server/media) + UPLOADS (volume).
 _MEDIA_BUNDLED = os.path.join(os.path.dirname(__file__), "media")
