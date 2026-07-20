@@ -54,6 +54,8 @@ from games.quiz.flags_data import FLAG_QUESTIONS as _FLAG_SEED  # noqa: E402
 db.seed_quiz_flags(_FLAG_SEED)  # catégorie Drapeaux (auto) au 1er lancement
 from games.quiz.culture_data import CULTURE_QUESTIONS as _CULTURE_SEED  # noqa: E402
 db.seed_quiz_batch(_CULTURE_SEED, "culture_v1")  # gros lot culture (mangas/séries/films…)
+from games.quiz.culture2_data import CULTURE_QUESTIONS_V2 as _CULTURE2_SEED  # noqa: E402
+db.seed_quiz_batch(_CULTURE2_SEED, "culture_g_v2")  # lot culture G (histoire/politique/maths…)
 
 # Médias des questions : drapeaux BUNDLÉS (server/media) + UPLOADS (volume).
 _MEDIA_BUNDLED = os.path.join(os.path.dirname(__file__), "media")

@@ -1,0 +1,160 @@
+"""Lot culture générale « sérieuse » — pour rééquilibrer face à la pop culture.
+Histoire, politique, maths, sciences, géographie, littérature, art, économie.
+
+Chargé via `db.seed_quiz_batch(CULTURE_QUESTIONS_V2, "culture_g_v2")`.
+"""
+
+
+def _q(cat, question, answer, *alts):
+    d = {"category": cat, "question": question, "answer": answer}
+    if alts:
+        d["alt_answers"] = list(alts)
+    return d
+
+
+CULTURE_QUESTIONS_V2 = [
+    # ------------------------------------------------ Histoire
+    _q("Histoire", "Quel roi de France était surnommé le Roi-Soleil ?", "Louis XIV", "Louis 14"),
+    _q("Histoire", "En quelle année a commencé la Première Guerre mondiale ?", "1914"),
+    _q("Histoire", "En quelle année s'est terminée la Seconde Guerre mondiale ?", "1945"),
+    _q("Histoire", "Qui dirigeait l'Allemagne nazie ?", "Adolf Hitler", "Hitler"),
+    _q("Histoire", "Quelle civilisation antique a inventé la démocratie ?", "Les Grecs", "La Grèce antique", "Athènes"),
+    _q("Histoire", "Quel roi de France a été guillotiné en 1793 ?", "Louis XVI", "Louis 16"),
+    _q("Histoire", "Quelle guerre a opposé la France et l'Angleterre pendant plus d'un siècle ?", "La guerre de Cent Ans", "Guerre de Cent Ans"),
+    _q("Histoire", "Qui a mené la France libre pendant la Seconde Guerre mondiale ?", "Charles de Gaulle", "De Gaulle"),
+    _q("Histoire", "Quelle bataille marque la défaite finale de Napoléon en 1815 ?", "Waterloo", "La bataille de Waterloo"),
+    _q("Histoire", "Quelle ville a subi la première bombe atomique le 6 août 1945 ?", "Hiroshima"),
+    _q("Histoire", "Quelle organisation internationale a été créée en 1945 pour la paix ?", "L'ONU", "ONU", "Organisation des Nations unies"),
+    _q("Histoire", "Quel dirigeant a mené l'URSS pendant la Seconde Guerre mondiale ?", "Staline", "Joseph Staline"),
+    _q("Histoire", "Quel événement a déclenché la Première Guerre mondiale (1914) ?", "L'assassinat de l'archiduc François-Ferdinand", "L'attentat de Sarajevo"),
+    _q("Histoire", "Quelle reine d'Égypte s'est alliée à César puis Marc Antoine ?", "Cléopâtre"),
+    _q("Histoire", "Quel roi a fait construire le château de Versailles ?", "Louis XIV", "Louis 14"),
+    _q("Histoire", "Quel pharaon est célèbre pour son masque funéraire en or ?", "Toutânkhamon", "Toutankhamon"),
+    _q("Histoire", "Qui a mené l'indépendance de l'Inde par la non-violence ?", "Gandhi", "Mahatma Gandhi"),
+    _q("Histoire", "Quel empire avait Rome pour capitale ?", "L'Empire romain", "Empire romain"),
+    _q("Histoire", "Quel mur a séparé Berlin jusqu'en 1989 ?", "Le mur de Berlin", "Mur de Berlin"),
+    _q("Histoire", "Quelle révolution a éclaté en France en 1789 ?", "La Révolution française", "Révolution française"),
+    _q("Histoire", "Quel navigateur italien atteint l'Amérique en 1492 ?", "Christophe Colomb", "Colomb"),
+    _q("Histoire", "Quel roi anglais a fondé l'Église anglicane pour divorcer ?", "Henri VIII", "Henri 8"),
+    _q("Histoire", "Qui a été le premier empereur des Français ?", "Napoléon", "Napoléon Bonaparte", "Napoléon Ier"),
+    _q("Histoire", "Quel conflit a opposé les blocs de l'Est et de l'Ouest sans combat direct ?", "La guerre froide", "Guerre froide"),
+    _q("Histoire", "Quelle jeune Française a mené les armées à Orléans et fut brûlée en 1431 ?", "Jeanne d'Arc"),
+
+    # ------------------------------------------------ Politique & institutions
+    _q("Politique", "Qui est le chef de l'État en France ?", "Le président de la République", "Le président"),
+    _q("Politique", "Combien de temps dure un mandat présidentiel en France aujourd'hui ?", "5 ans", "Cinq ans"),
+    _q("Politique", "Dans quel palais réside le président français ?", "L'Élysée", "Le palais de l'Élysée", "Élysée"),
+    _q("Politique", "Combien d'États membres compte l'Union européenne (2024) ?", "27"),
+    _q("Politique", "Comment s'appelle la chambre basse du Parlement français ?", "L'Assemblée nationale", "Assemblée nationale"),
+    _q("Politique", "Quelle est la devise de la République française ?", "Liberté, Égalité, Fraternité"),
+    _q("Politique", "Comment appelle-t-on un régime dirigé par un roi ou une reine ?", "Une monarchie", "Monarchie"),
+    _q("Politique", "Comment appelle-t-on un régime dont le chef d'État est un président ?", "Une république", "République"),
+    _q("Politique", "Combien de membres permanents siègent au Conseil de sécurité de l'ONU ?", "5", "Cinq"),
+    _q("Politique", "Combien d'étoiles compte le drapeau des États-Unis ?", "50", "Cinquante"),
+    _q("Politique", "À quel âge peut-on voter en France ?", "18 ans", "18"),
+    _q("Politique", "Quel texte de 1789 fonde les droits en France ?", "La Déclaration des droits de l'homme et du citoyen", "La Déclaration des droits de l'homme"),
+    _q("Politique", "Dans quelle ville siège le Parlement européen ?", "Strasbourg"),
+    _q("Politique", "Comment appelle-t-on le droit de voter ?", "Le suffrage", "Le droit de vote", "Suffrage universel"),
+    _q("Politique", "Quelle rue londonienne abrite la résidence du Premier ministre britannique ?", "Downing Street", "10 Downing Street"),
+    _q("Politique", "Comment s'appelle le vote qui permet aux citoyens de trancher une question ?", "Un référendum", "Référendum"),
+    _q("Politique", "Quel pays est une fédération de 50 États ?", "Les États-Unis", "États-Unis", "USA"),
+    _q("Politique", "Comment appelle-t-on la séparation des pouvoirs exécutif, législatif et judiciaire ?", "La séparation des pouvoirs"),
+
+    # ------------------------------------------------ Mathématiques
+    _q("Maths", "Combien font 7 × 8 ?", "56"),
+    _q("Maths", "Combien font 12 × 12 ?", "144"),
+    _q("Maths", "Quelle est la racine carrée de 144 ?", "12"),
+    _q("Maths", "Combien de côtés a un pentagone ?", "5", "Cinq"),
+    _q("Maths", "Combien vaut la somme des angles d'un triangle ?", "180", "180 degrés"),
+    _q("Maths", "Combien de degrés dans un cercle complet ?", "360", "360 degrés"),
+    _q("Maths", "Quelle est la valeur approchée de Pi (deux décimales) ?", "3,14", "3.14"),
+    _q("Maths", "Combien font 2 puissance 10 ?", "1024"),
+    _q("Maths", "Combien font 15 % de 200 ?", "30"),
+    _q("Maths", "Comment appelle-t-on un triangle dont les 3 côtés sont égaux ?", "Équilatéral", "Triangle équilatéral"),
+    _q("Maths", "Quel est le plus petit nombre premier ?", "2", "Deux"),
+    _q("Maths", "Combien font 9 × 6 ?", "54"),
+    _q("Maths", "Combien de degrés fait un angle droit ?", "90", "90 degrés"),
+    _q("Maths", "Combien font 3² + 4² ?", "25"),
+    _q("Maths", "Combien de faces a un cube ?", "6", "Six"),
+    _q("Maths", "Combien font 144 ÷ 12 ?", "12"),
+    _q("Maths", "Quel théorème relie les côtés d'un triangle rectangle ?", "Le théorème de Pythagore", "Pythagore"),
+    _q("Maths", "Combien font 25 × 4 ?", "100"),
+    _q("Maths", "Comment appelle-t-on un nombre divisible uniquement par 1 et lui-même ?", "Un nombre premier", "Nombre premier"),
+    _q("Maths", "Combien de minutes dans deux heures et demie ?", "150"),
+
+    # ------------------------------------------------ Sciences
+    _q("Sciences", "Quel scientifique a formulé la théorie de la relativité ?", "Einstein", "Albert Einstein"),
+    _q("Sciences", "Quel savant a énoncé la loi de la gravitation universelle ?", "Newton", "Isaac Newton"),
+    _q("Sciences", "Quel est le symbole chimique du fer ?", "Fe"),
+    _q("Sciences", "Quelle est l'étoile la plus proche de la Terre ?", "Le Soleil", "Soleil"),
+    _q("Sciences", "Qui a proposé la théorie de l'évolution des espèces ?", "Darwin", "Charles Darwin"),
+    _q("Sciences", "Quel est l'os le plus long du corps humain ?", "Le fémur", "Fémur"),
+    _q("Sciences", "À quelle température l'eau bout-elle au niveau de la mer ?", "100 °C", "100 degrés", "100"),
+    _q("Sciences", "Quel scientifique a découvert la pénicilline ?", "Fleming", "Alexander Fleming"),
+    _q("Sciences", "Quelle particule de l'atome porte une charge négative ?", "L'électron", "Électron"),
+    _q("Sciences", "Quelle est la plus grande planète du système solaire ?", "Jupiter"),
+    _q("Sciences", "Combien de cavités (chambres) compte le cœur humain ?", "4", "Quatre"),
+    _q("Sciences", "Quel appareil enregistre les tremblements de terre ?", "Le sismographe", "Sismographe"),
+    _q("Sciences", "Quel gaz les êtres humains rejettent-ils en respirant ?", "Le dioxyde de carbone", "CO2"),
+    _q("Sciences", "Quelle est l'unité de mesure de la force ?", "Le newton", "Newton", "N"),
+    _q("Sciences", "Quel physicien a découvert la radioactivité avec son mari ?", "Marie Curie", "Curie"),
+    _q("Sciences", "Comment s'appelle la galaxie qui abrite notre système solaire ?", "La Voie lactée", "Voie lactée"),
+    _q("Sciences", "Quel organe produit l'insuline ?", "Le pancréas", "Pancréas"),
+    _q("Sciences", "Quelle est l'unité de mesure du courant électrique ?", "L'ampère", "Ampère", "A"),
+
+    # ------------------------------------------------ Géographie
+    _q("Géographie", "Quelle est la capitale de l'Australie ?", "Canberra"),
+    _q("Géographie", "Quel est le plus grand pays du monde par superficie ?", "La Russie", "Russie"),
+    _q("Géographie", "Quelle chaîne de montagnes sépare l'Europe de l'Asie ?", "L'Oural", "Les monts Oural", "Oural"),
+    _q("Géographie", "Quelle mer est si salée qu'on y flotte facilement ?", "La mer Morte", "Mer Morte"),
+    _q("Géographie", "Quel canal relie la Méditerranée à la mer Rouge ?", "Le canal de Suez", "Canal de Suez"),
+    _q("Géographie", "Quelle est la capitale de l'Allemagne ?", "Berlin"),
+    _q("Géographie", "Quelle est la capitale de la Russie ?", "Moscou"),
+    _q("Géographie", "Quelle est la plus grande île du monde ?", "Le Groenland", "Groenland"),
+    _q("Géographie", "Dans quel pays se trouve le Taj Mahal ?", "L'Inde", "Inde"),
+    _q("Géographie", "Quelle est la capitale du Portugal ?", "Lisbonne"),
+    _q("Géographie", "Quelle est la capitale de la Grèce ?", "Athènes"),
+    _q("Géographie", "Quel est le plus haut sommet d'Afrique ?", "Le Kilimandjaro", "Kilimandjaro"),
+    _q("Géographie", "Combien d'océans compte la Terre ?", "5", "Cinq"),
+    _q("Géographie", "Quelle est la capitale des États-Unis ?", "Washington", "Washington D.C."),
+    _q("Géographie", "Quel fleuve traverse Londres ?", "La Tamise", "Tamise"),
+    _q("Géographie", "Quel pays est traversé par le plus long fleuve d'Amérique du Sud ?", "Le Brésil", "Brésil"),
+    _q("Géographie", "Quelle est la capitale de la Chine ?", "Pékin", "Beijing"),
+    _q("Géographie", "Sur quel continent se trouve le Sahara ?", "L'Afrique", "Afrique"),
+
+    # ------------------------------------------------ Littérature
+    _q("Littérature", "Qui a écrit « Les Misérables » ?", "Victor Hugo", "Hugo"),
+    _q("Littérature", "Qui a écrit « Roméo et Juliette » ?", "Shakespeare", "William Shakespeare"),
+    _q("Littérature", "Qui a écrit « Le Petit Prince » ?", "Saint-Exupéry", "Antoine de Saint-Exupéry"),
+    _q("Littérature", "Qui a écrit « Germinal » ?", "Émile Zola", "Zola"),
+    _q("Littérature", "Quel philosophe a écrit le conte « Candide » ?", "Voltaire"),
+    _q("Littérature", "Qui a écrit le roman « 1984 » ?", "George Orwell", "Orwell"),
+    _q("Littérature", "Qui a écrit « Les Trois Mousquetaires » ?", "Alexandre Dumas", "Dumas"),
+    _q("Littérature", "Qui a écrit les fables comme « Le Corbeau et le Renard » ?", "Jean de La Fontaine", "La Fontaine"),
+    _q("Littérature", "Quel poète a écrit « Les Fleurs du mal » ?", "Baudelaire", "Charles Baudelaire"),
+    _q("Littérature", "Qui a écrit « L'Étranger » ?", "Albert Camus", "Camus"),
+    _q("Littérature", "Quel dramaturge a écrit « Le Malade imaginaire » ?", "Molière"),
+    _q("Littérature", "Qui a écrit « Notre-Dame de Paris » ?", "Victor Hugo", "Hugo"),
+
+    # ------------------------------------------------ Art & Philosophie
+    _q("Art & Philo", "Qui a peint « La Nuit étoilée » ?", "Van Gogh", "Vincent Van Gogh"),
+    _q("Art & Philo", "Qui a peint le plafond de la chapelle Sixtine ?", "Michel-Ange", "Michelange"),
+    _q("Art & Philo", "Qui a sculpté « Le Penseur » ?", "Rodin", "Auguste Rodin"),
+    _q("Art & Philo", "Quel philosophe grec fut le maître de Platon ?", "Socrate"),
+    _q("Art & Philo", "Quel philosophe a écrit « Je pense donc je suis » ?", "Descartes", "René Descartes"),
+    _q("Art & Philo", "Qui a peint « Guernica » ?", "Picasso", "Pablo Picasso"),
+    _q("Art & Philo", "Quel mouvement artistique est associé à Claude Monet ?", "L'impressionnisme", "Impressionnisme"),
+    _q("Art & Philo", "Quel compositeur devenu sourd a écrit la 9e symphonie ?", "Beethoven"),
+    _q("Art & Philo", "Qui a peint « La Joconde » ?", "Léonard de Vinci", "De Vinci"),
+    _q("Art & Philo", "Quel philosophe grec a fondé l'Académie d'Athènes ?", "Platon"),
+
+    # ------------------------------------------------ Économie
+    _q("Économie", "Quelle est la monnaie du Royaume-Uni ?", "La livre sterling", "Livre sterling", "Livre"),
+    _q("Économie", "Quelle est la monnaie des États-Unis ?", "Le dollar", "Dollar"),
+    _q("Économie", "Comment appelle-t-on la hausse générale et durable des prix ?", "L'inflation", "Inflation"),
+    _q("Économie", "Comment appelle-t-on le marché où s'échangent les actions ?", "La Bourse", "Bourse"),
+    _q("Économie", "Quelle institution émet l'euro ?", "La BCE", "La Banque centrale européenne"),
+    _q("Économie", "Quelle est la monnaie de la Suisse ?", "Le franc suisse", "Franc suisse"),
+    _q("Économie", "Que mesure le PIB d'un pays ?", "La richesse produite", "La production", "Le produit intérieur brut"),
+    _q("Économie", "Comment appelle-t-on l'argent qu'on met de côté ?", "L'épargne", "Épargne"),
+]

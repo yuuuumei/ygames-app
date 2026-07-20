@@ -617,13 +617,18 @@ def quiz_categories() -> list[str]:
 
 
 # En mode « aléatoire », on plafonne certains types spéciaux pour ne pas
-# noyer la partie (max 2 drapeaux, 2 frises, 2 sons d'animaux).
+# noyer la partie (max 2 drapeaux, 2 frises, 2 sons d'animaux)...
 QUIZ_TYPE_CAPS = {"flag": 2, "timeline": 2, "audio": 2}
+# ...et certaines catégories pop, pour laisser la culture G dominer.
+QUIZ_CATEGORY_CAPS = {
+    "Manga & Anime": 2, "Séries": 2, "Cinéma": 2, "Jeux vidéo": 2, "Musique": 2,
+}
 
 
 def quiz_random(n: int, category: str | None = None) -> list[dict]:
     """Tire n questions au hasard. Sur une catégorie précise, pas de plafond.
-    En « aléatoire », les types spéciaux (drapeau/frise/son) sont plafonnés."""
+    En « aléatoire », types spéciaux (drapeau/frise/son) ET catégories pop
+    (anime/séries/ciné/JV/musique) sont plafonnés à 2 pour équilibrer."""
     conn = get_db()
     if category:
         rows = conn.execute(
@@ -639,15 +644,22 @@ def quiz_random(n: int, category: str | None = None) -> list[dict]:
     ).fetchall()
     conn.close()
     out: list[dict] = []
-    counts: dict[str, int] = {}
+    type_counts: dict[str, int] = {}
+    cat_counts: dict[str, int] = {}
     for r in rows:
         t = r["type"] or "text"
-        cap = QUIZ_TYPE_CAPS.get(t)
-        if cap is not None:
-            if counts.get(t, 0) >= cap:
-                continue
-            counts[t] = counts.get(t, 0) + 1
+        cat = r["category"]
+        tcap = QUIZ_TYPE_CAPS.get(t)
+        ccap = QUIZ_CATEGORY_CAPS.get(cat)
+        if tcap is not None and type_counts.get(t, 0) >= tcap:
+            continue
+        if ccap is not None and cat_counts.get(cat, 0) >= ccap:
+            continue
         out.append(dict(r))
+        if tcap is not None:
+            type_counts[t] = type_counts.get(t, 0) + 1
+        if ccap is not None:
+            cat_counts[cat] = cat_counts.get(cat, 0) + 1
         if len(out) >= n:
             break
     return out
