@@ -616,19 +616,21 @@ def quiz_categories() -> list[str]:
     return [r["category"] for r in rows]
 
 
-# En mode « aléatoire », on plafonne certains types spéciaux pour ne pas
-# noyer la partie (max 2 drapeaux, 2 frises, 2 sons d'animaux)...
-QUIZ_TYPE_CAPS = {"flag": 2, "timeline": 2, "audio": 2}
-# ...et certaines catégories pop, pour laisser la culture G dominer.
+# En mode « aléatoire », on plafonne certaines catégories par partie pour
+# garder de la variété et laisser la culture G dominer.
 QUIZ_CATEGORY_CAPS = {
+    # catégories « spéciales » (média/mécanique) : max 2 chacune
+    "Drapeaux": 2, "Frise chrono": 2, "Bruits d'animaux": 2, "Langue étrangère": 2,
+    "Petit Bac": 1,
+    # pop culture : max 2 chacune
     "Manga & Anime": 2, "Séries": 2, "Cinéma": 2, "Jeux vidéo": 2, "Musique": 2,
 }
 
 
 def quiz_random(n: int, category: str | None = None) -> list[dict]:
     """Tire n questions au hasard. Sur une catégorie précise, pas de plafond.
-    En « aléatoire », types spéciaux (drapeau/frise/son) ET catégories pop
-    (anime/séries/ciné/JV/musique) sont plafonnés à 2 pour équilibrer."""
+    En « aléatoire », les catégories listées dans QUIZ_CATEGORY_CAPS sont
+    plafonnées (drapeau/frise/son/langue/pop…) pour équilibrer la partie."""
     conn = get_db()
     if category:
         rows = conn.execute(
@@ -644,20 +646,13 @@ def quiz_random(n: int, category: str | None = None) -> list[dict]:
     ).fetchall()
     conn.close()
     out: list[dict] = []
-    type_counts: dict[str, int] = {}
     cat_counts: dict[str, int] = {}
     for r in rows:
-        t = r["type"] or "text"
         cat = r["category"]
-        tcap = QUIZ_TYPE_CAPS.get(t)
         ccap = QUIZ_CATEGORY_CAPS.get(cat)
-        if tcap is not None and type_counts.get(t, 0) >= tcap:
-            continue
         if ccap is not None and cat_counts.get(cat, 0) >= ccap:
             continue
         out.append(dict(r))
-        if tcap is not None:
-            type_counts[t] = type_counts.get(t, 0) + 1
         if ccap is not None:
             cat_counts[cat] = cat_counts.get(cat, 0) + 1
         if len(out) >= n:

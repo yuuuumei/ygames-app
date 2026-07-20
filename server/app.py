@@ -56,6 +56,8 @@ from games.quiz.culture_data import CULTURE_QUESTIONS as _CULTURE_SEED  # noqa: 
 db.seed_quiz_batch(_CULTURE_SEED, "culture_v1")  # gros lot culture (mangas/séries/films…)
 from games.quiz.culture2_data import CULTURE_QUESTIONS_V2 as _CULTURE2_SEED  # noqa: E402
 db.seed_quiz_batch(_CULTURE2_SEED, "culture_g_v2")  # lot culture G (histoire/politique/maths…)
+from games.quiz.languages_data import LANGUAGE_QUESTIONS as _LANG_SEED  # noqa: E402
+db.seed_quiz_batch(_LANG_SEED, "languages_v1")  # catégorie Langue étrangère (audio TTS)
 
 # Médias des questions : drapeaux BUNDLÉS (server/media) + UPLOADS (volume).
 _MEDIA_BUNDLED = os.path.join(os.path.dirname(__file__), "media")
