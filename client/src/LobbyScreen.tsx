@@ -102,7 +102,7 @@ export default function LobbyScreen(props: Props) {
       {/* en-tête table */}
       <header className="tbl-head">
         <div className="tbl-head-left">
-          <button className="tbl-back" onClick={props.onLeave} title="Quitter la table">
+          <button className="tbl-back" onClick={props.onLeave} data-tip="Quitter la table" aria-label="Quitter la table">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="m15 18-6-6 6-6" />
             </svg>
@@ -159,7 +159,7 @@ export default function LobbyScreen(props: Props) {
                   key={m.id}
                   className={"tbl-seat" + (isMe ? " me" : "") + (viewable ? " clickable" : "")}
                   onClick={viewable ? () => props.onViewProfile(m.id) : undefined}
-                  title={viewable ? "Voir le profil" : undefined}
+                  data-tip={viewable ? "Voir le profil" : undefined} aria-label={viewable ? "Voir le profil" : undefined}
                 >
                   <div className={"tbl-seat-avatar" + (m.connected ? "" : " off")}>
                     {cos ? (
@@ -174,7 +174,7 @@ export default function LobbyScreen(props: Props) {
                       <Avatar url={m.avatar_url} name={m.display_name} />
                     )}
                     {isTheHost && (
-                      <span className="tbl-crown" title="Hôte">
+                      <span className="tbl-crown" data-tip="Hôte" aria-label="Hôte">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M3 7l4.5 4L12 5l4.5 6L21 7l-1.8 11H4.8L3 7Z" />
                         </svg>
@@ -200,7 +200,7 @@ export default function LobbyScreen(props: Props) {
                   {isHost && !isMe && (
                     <button
                       className="tbl-kick"
-                      title="Exclure"
+                      data-tip="Exclure" aria-label="Exclure"
                       onClick={(e) => {
                         e.stopPropagation();
                         props.onKick(m.id);
@@ -429,7 +429,7 @@ export default function LobbyScreen(props: Props) {
               placeholder="Écris un message…"
               maxLength={500}
             />
-            <button type="submit" disabled={!draft.trim()} title="Envoyer">
+            <button type="submit" disabled={!draft.trim()} data-tip="Envoyer" aria-label="Envoyer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="m22 2-7 20-4-9-9-4Z" />
                 <path d="M22 2 11 13" />

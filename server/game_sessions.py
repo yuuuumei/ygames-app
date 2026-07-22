@@ -16,6 +16,7 @@ from core import registry
 import games.impostor.game  # noqa: F401
 import games.spyfall.game  # noqa: F401
 import games.quiz.game  # noqa: F401
+import games.stairs.game  # noqa: F401
 
 # lobby code -> session
 # session = {"game_id", "runner", "user_ids", "host_id", "stats_saved"}
@@ -117,6 +118,7 @@ def maybe_record_stats(code: str) -> bool:
         return False
 
     report = game.stats_report()  # player_id(str) -> faits
+    summary = game.match_summary()  # le récit commun de la partie
     host_id = session["host_id"]
     game_id = session["game_id"]
     rows = []
@@ -132,10 +134,17 @@ def maybe_record_stats(code: str) -> bool:
             "gave_clue": facts.get("gave_clue", False),
             "hosted": uid == host_id,
         })
-        # détail d'historique selon le jeu
-        detail = {"hosted": uid == host_id}
+        # détail d'historique : ce qui rend la ligne lisible dans la vitrine
+        detail = {"hosted": uid == host_id, "players": len(session["user_ids"])}
         if game_id == "impostor":
             detail["role"] = "impostor" if facts.get("was_impostor") else "civil"
+            detail["voted_correctly"] = facts.get("voted_correctly", False)
+        if facts.get("rank"):
+            detail["rank"] = facts["rank"]
+        if facts.get("score") is not None:
+            detail["score"] = facts["score"]
+        if summary:
+            detail["summary"] = summary
         history.append({
             "user_id": uid, "game_id": game_id, "won": won, "detail": detail,
         })

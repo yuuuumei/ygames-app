@@ -214,7 +214,7 @@ export type GameMeta = {
 };
 
 /** Les jeux qui ont déjà leur écran côté client. */
-export const PLAYABLE_GAMES = new Set(["impostor", "quiz"]);
+export const PLAYABLE_GAMES = new Set(["impostor", "quiz", "stairs"]);
 
 type SocialState = {
   friends: Friend[];

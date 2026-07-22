@@ -160,6 +160,20 @@ def init_db() -> None:
             PRIMARY KEY (user_id, game, day)
         );
         CREATE INDEX IF NOT EXISTS idx_daily_day ON daily_plays(game, day);
+
+        -- STAIRS : une ligne par run terminée (jeu d'arcade, tour aléatoire).
+        CREATE TABLE IF NOT EXISTS stairs_runs (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            score       INTEGER NOT NULL,       -- marches gravies
+            coins       INTEGER NOT NULL DEFAULT 0,
+            duration_ms INTEGER NOT NULL DEFAULT 0,
+            played_at   INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_stairs_user
+            ON stairs_runs(user_id, played_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_stairs_board
+            ON stairs_runs(played_at DESC, score DESC);
         """
     )
     # Migrations légères pour les bases déjà en prod (colonnes ajoutées après coup).
@@ -652,6 +666,72 @@ def daily_streak(user_id: int, game: str, today: str) -> int:
         streak += 1
         cur -= timedelta(days=1)
     return streak
+
+
+# ------------------------------------------------------------------ STAIRS
+
+def _stairs_window(scope: str) -> int:
+    """Timestamp de début de la fenêtre de classement (0 = depuis toujours)."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    if scope == "day":
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif scope == "week":                      # semaine ISO, lundi 00:00 UTC
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start -= timedelta(days=start.weekday())
+    else:
+        return 0
+    return int(start.timestamp())
+
+
+def stairs_record(user_id: int, score: int, coins: int, duration_ms: int) -> None:
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO stairs_runs (user_id, score, coins, duration_ms, played_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (user_id, score, coins, duration_ms, int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+def stairs_board(user_ids: list[int], scope: str, limit: int = 20) -> list[dict]:
+    """Le meilleur score de chaque joueur sur la fenêtre demandée."""
+    if not user_ids:
+        return []
+    marks = ",".join("?" for _ in user_ids)
+    since = _stairs_window(scope)
+    conn = get_db()
+    rows = conn.execute(
+        f"SELECT u.id AS id, u.discord_id, u.username, u.global_name, u.avatar, "
+        f"       MAX(r.score) AS score, SUM(r.coins) AS coins, COUNT(*) AS runs "
+        f"FROM stairs_runs r JOIN users u ON u.id = r.user_id "
+        f"WHERE r.user_id IN ({marks}) AND r.played_at >= ? "
+        f"GROUP BY u.id ORDER BY score DESC, runs ASC "
+        f"LIMIT ?",
+        (*user_ids, since, limit),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def stairs_personal(user_id: int) -> dict:
+    """Mes records sur les trois fenêtres, plus le total de gemmes."""
+    conn = get_db()
+    out = {}
+    for scope in ("day", "week", "all"):
+        row = conn.execute(
+            "SELECT MAX(score) AS best, COUNT(*) AS runs FROM stairs_runs "
+            "WHERE user_id = ? AND played_at >= ?",
+            (user_id, _stairs_window(scope)),
+        ).fetchone()
+        out[scope] = {"best": row["best"] or 0, "runs": row["runs"] or 0}
+    row = conn.execute(
+        "SELECT SUM(coins) AS c FROM stairs_runs WHERE user_id = ?", (user_id,)
+    ).fetchone()
+    conn.close()
+    out["coins"] = row["c"] or 0
+    return out
 
 
 # ------------------------------------------------------------- catalogue

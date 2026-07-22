@@ -92,6 +92,8 @@ class QuizGame(Game):
         cat = config.get("category")
         cat = None if cat in (None, "aléatoire") else cat
 
+        self.category = cat           # None = mélange de toutes les catégories
+
         #: [{id, category, question, answer}]
         self.questions: list[dict] = db.quiz_random(n, cat)
         self.total = len(self.questions)
@@ -287,14 +289,31 @@ class QuizGame(Game):
         if self.phase != "over":
             return {}
         winners = set(self.winners)
+        by_id = {r["id"]: r for r in self._ranking()}   # gère les ex æquo
         return {
             pid: {
                 "won": pid in winners,
                 "was_impostor": False,
                 "voted_correctly": False,
                 "gave_clue": False,
+                "rank": by_id[pid]["rank"],
+                "players": len(self.players),
+                "score": by_id[pid]["score"],
             }
             for pid in self.players
+        }
+
+    def match_summary(self) -> dict:
+        """Le récit de la partie : le classement complet et les questions."""
+        if self.phase != "over":
+            return {}
+        return {
+            "category": self.category,
+            "questions": self.total,
+            "table": [
+                {"name": r["name"], "score": r["score"], "rank": r["rank"]}
+                for r in self._ranking()
+            ],
         }
 
     # -- hooks desktop -------------------------------------------------

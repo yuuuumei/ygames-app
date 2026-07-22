@@ -11,6 +11,9 @@ import LoginScreen from "./LoginScreen";
 import ProfileScreen from "./ProfileScreen";
 import ProfileShowcase from "./ProfileShowcase";
 import DailyScreen from "./DailyScreen";
+import StairsScreen from "./StairsScreen";
+import StairsRaceScreen from "./StairsRaceScreen";
+import PatchNotes, { hasUnseenNotes } from "./PatchNotes";
 import AdminScreen from "./AdminScreen";
 import SettingsScreen from "./SettingsScreen";
 import Splash from "./Splash";
@@ -21,7 +24,9 @@ import imposteurIcon from "./assets/imposteur-icon.png";
 import imposteurHero from "./assets/imposteur-hero.png";
 import quizIcon from "./assets/quiz-icon.jpg";
 import quizHero from "./assets/quiz-hero.jpg";
-import { ToastHost } from "./toast";
+import stairsHero from "./assets/stairs-hero.jpg";
+import stairsIcon from "./assets/stairs-icon.jpg";
+import { ToastHost, toast } from "./toast";
 import "./theme.css";
 import "./_legacy.css";
 import "./App.css";
@@ -48,6 +53,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [showDailies, setShowDailies] = useState(false);
+  const [showStairs, setShowStairs] = useState(false);
   const [viewedProfile, setViewedProfile] = useState<Profile | null>(null);
   const social = useSocial(screen.kind === "home");
 
@@ -56,9 +62,25 @@ function App() {
     if (resp.profile) setViewedProfile(resp.profile);
   }
 
+  async function inviteFromProfile(userId: number, name: string) {
+    const err = await social.inviteToLobby(userId);
+    if (err) {
+      toast(err);
+    } else {
+      toast(`Invitation envoyée à ${name}`);
+      setViewedProfile(null);
+    }
+  }
+
   useEffect(() => {
     getVersion().then(setVersion).catch(() => {});
   }, []);
+
+  // après une mise à jour, on présente les nouveautés une seule fois
+  const [showNotes, setShowNotes] = useState(false);
+  useEffect(() => {
+    if (screen.kind === "home" && hasUnseenNotes()) setShowNotes(true);
+  }, [screen.kind]);
 
   useEffect(() => {
     invoke<User | null>("get_session")
@@ -112,8 +134,13 @@ function App() {
           onViewProfile={openProfile}
           showDailies={showDailies}
           setShowDailies={setShowDailies}
+          showStairs={showStairs}
+          setShowStairs={setShowStairs}
+          onOpenNotes={() => setShowNotes(true)}
         />
       </div>
+
+      {showNotes && <PatchNotes version={version} onClose={() => setShowNotes(false)} />}
 
       {/* vitrine d'un autre joueur (overlay global) */}
       {viewedProfile && (
@@ -128,6 +155,12 @@ function App() {
               profile={viewedProfile}
               isMe={!!viewedProfile.is_me}
               onClose={() => setViewedProfile(null)}
+              onInvite={
+                // proposable seulement si j'ai une table sous la main
+                social.lobby && viewedProfile.user && !viewedProfile.is_me
+                  ? () => inviteFromProfile(viewedProfile.user!.id, viewedProfile.user!.display_name)
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -202,9 +235,12 @@ type BodyProps = {
   onViewProfile: (userId: number) => void;
   showDailies: boolean;
   setShowDailies: (v: boolean) => void;
+  showStairs: boolean;
+  setShowStairs: (v: boolean) => void;
+  onOpenNotes: () => void;
 };
 
-function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen, onViewProfile, showDailies, setShowDailies }: BodyProps) {
+function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen, onViewProfile, showDailies, setShowDailies, showStairs, setShowStairs, onOpenNotes }: BodyProps) {
   if (screen.kind === "loading") {
     return <Splash version={version} />;
   }
@@ -224,6 +260,10 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
   const { user } = screen;
 
   // Défis du jour (jeux solo asynchrones).
+  if (showStairs && !social.lobby && !social.gameView) {
+    return <StairsScreen ask={social.ask} onClose={() => setShowStairs(false)} />;
+  }
+
   if (showDailies && !social.lobby && !social.gameView) {
     return <DailyScreen ask={social.ask} onClose={() => setShowDailies(false)} />;
   }
@@ -274,6 +314,17 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
     };
     if ((social.gameView as any).game === "quiz") {
       return <QuizScreen view={social.gameView as any} {...gameProps} />;
+    }
+    if ((social.gameView as any).game === "stairs") {
+      return (
+        <StairsRaceScreen
+          view={social.gameView as any}
+          me={gameProps.myPlayerId}
+          isHost={gameProps.isHost}
+          onAction={gameProps.onAction}
+          onEnd={gameProps.onEnd}
+        />
+      );
     }
     return <ImpostorScreen view={social.gameView as any} {...gameProps} />;
   }
@@ -387,6 +438,8 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
       onLogout={onLogout}
       onViewProfile={onViewProfile}
       onOpenDailies={() => setShowDailies(true)}
+      onOpenStairs={() => setShowStairs(true)}
+      onOpenNotes={onOpenNotes}
     />
   );
 }
@@ -403,6 +456,8 @@ function Launcher({
   onLogout,
   onViewProfile,
   onOpenDailies,
+  onOpenStairs,
+  onOpenNotes,
 }: {
   user: User;
   social: ReturnType<typeof useSocial>;
@@ -413,6 +468,8 @@ function Launcher({
   onLogout: () => void;
   onViewProfile: (userId: number) => void;
   onOpenDailies: () => void;
+  onOpenStairs: () => void;
+  onOpenNotes: () => void;
 }) {
   const [code, setCode] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -431,6 +488,15 @@ function Launcher({
         total: l.length,
         streak: Math.max(0, ...l.map((d) => d.streak)),
       });
+    });
+  }, [social.connected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // record perso STAIRS, affiché sur sa carte d'accueil
+  const [stairsBest, setStairsBest] = useState<number | null>(null);
+  useEffect(() => {
+    if (!social.connected) return;
+    social.ask("stairs_home").then((r: any) => {
+      if (r?.personal) setStairsBest(r.personal.all.best);
     });
   }, [social.connected]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -464,7 +530,7 @@ function Launcher({
                 maxLength={4}
                 spellCheck={false}
               />
-              <button className="joincode-go" disabled={code.trim().length < 4} title="Rejoindre">
+              <button className="joincode-go" disabled={code.trim().length < 4} data-tip="Rejoindre" aria-label="Rejoindre">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
@@ -477,7 +543,7 @@ function Launcher({
               <button
                 className={"profile-chip" + (menuOpen ? " open" : "")}
                 onClick={() => setMenuOpen((v) => !v)}
-                title="Mon compte"
+                data-tip="Mon compte" aria-label="Mon compte"
               >
                 <div className="profile-avatar-wrap">
                   <Avatar url={user.avatar_url} name={user.display_name} size={36} />
@@ -544,7 +610,7 @@ function Launcher({
             <div className="games-bar-sep" />
             <button
               className="gt-icon gt-icon-game"
-              title="L'Imposteur"
+              data-tip="L'Imposteur" aria-label="L'Imposteur"
               disabled={!social.connected}
               onClick={() => onPickGame("impostor")}
             >
@@ -552,13 +618,21 @@ function Launcher({
             </button>
             <button
               className="gt-icon gt-icon-game"
-              title="Quiz Culture"
+              data-tip="Quiz Culture" aria-label="Quiz Culture"
               disabled={!social.connected}
               onClick={() => onPickGame("quiz")}
             >
               <img className="gt-icon-img" src={quizIcon} alt="Quiz Culture" />
             </button>
-            <div className="gt-icon locked" title="Spyfall — bientôt">
+            <button
+              className="gt-icon gt-icon-game"
+              data-tip="STAIRS" aria-label="STAIRS"
+              disabled={!social.connected}
+              onClick={onOpenStairs}
+            >
+              <img className="gt-icon-img" src={stairsIcon} alt="STAIRS" />
+            </button>
+            <div className="gt-icon locked" data-tip="Spyfall — bientôt" aria-label="Spyfall — bientôt">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <line x1="6" y1="11" x2="10" y2="11" />
                 <line x1="8" y1="9" x2="8" y2="13" />
@@ -655,7 +729,7 @@ function Launcher({
             </svg>
           </button>
 
-          {/* rangée : Quiz jouable + Spyfall à venir */}
+          {/* rangée : Quiz et STAIRS, tous deux jouables */}
           <div className="soon-row">
             <button
               className="game-card"
@@ -678,15 +752,58 @@ function Launcher({
                 </div>
               </div>
             </button>
+
+            <button
+              className="game-card"
+              disabled={!social.connected}
+              onClick={onOpenStairs}
+              style={{ animationDelay: "0.18s" }}
+            >
+              <img className="game-card-art" src={stairsHero} alt="" />
+              <div className="game-card-scrim" />
+              <div className="game-card-content">
+                <div className="game-card-badges">
+                  <span className="badge-live">
+                    <span />
+                    Jouable
+                  </span>
+                  {(stairsBest ?? 0) > 0 && (
+                    <span className="badge-best mono">
+                      <span className="badge-best-ic">🏔️</span>
+                      {stairsBest}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="game-card-title">STAIRS</div>
+                  <div className="game-card-desc">
+                    Grimpe le plus haut possible. En solo, ou en course depuis une table.
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {/* à venir */}
+          <div className="soon-row">
             <SoonCard
               name="Spyfall"
               desc="Un espion, un lieu secret, des questions qui piègent."
               glow="radial-gradient(80% 100% at 85% 0%, rgba(34,211,238,.14), transparent 60%)"
-              delay="0.18s"
+              delay="0.24s"
+            />
+            <SoonCard
+              name="Skribbl"
+              desc="Dessine, fais deviner, et assume tes talents artistiques."
+              glow="radial-gradient(80% 100% at 85% 0%, rgba(255,194,75,.14), transparent 60%)"
+              delay="0.3s"
             />
           </div>
 
-          <p className="version">yGAMES v{version}</p>
+          <button className="version" onClick={onOpenNotes}>
+            yGAMES v{version}
+            <span className="version-link">— notes de version</span>
+          </button>
           </div>
         </div>
       </div>

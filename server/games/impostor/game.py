@@ -128,6 +128,30 @@ class ImpostorGame(Game):
             "word_impostor": self.word_impostor,
         }
 
+    def match_summary(self) -> dict:
+        """Le récit de la partie pour l'historique : le mot, qui trichait,
+        les indices donnés et qui a voté pour qui."""
+        if self.phase != "over":
+            return {}
+        return {
+            "category": self.category,
+            "difficulty": self.difficulty,
+            "word": self.word_main,
+            "word_impostor": self.word_impostor,
+            "impostors": [self.players[i].name for i in self.impostor_ids],
+            "winners": [self.players[w].name for w in self.winners],
+            "table": [
+                {
+                    "name": p.name,
+                    "impostor": pid in self.impostor_ids,
+                    "clue": self.clues.get(pid),
+                    "voted": self.players[self.votes[pid]].name
+                    if pid in self.votes else None,
+                }
+                for pid, p in self.players.items()
+            ],
+        }
+
     def stats_report(self) -> dict:
         """Faits par joueur (player_id -> dict) pour le système de stats.
         Valide une fois la partie terminée."""

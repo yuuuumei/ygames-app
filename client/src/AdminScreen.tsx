@@ -140,7 +140,7 @@ export default function AdminScreen({
 
   const headerNode = (
     <div className="admin-head">
-      <button className="tbl-back" onClick={onClose} title="Retour">
+      <button className="tbl-back" onClick={onClose} data-tip="Retour" aria-label="Retour">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
           <path d="m15 18-6-6 6-6" />
         </svg>
@@ -204,7 +204,7 @@ export default function AdminScreen({
                     </div>
                     <button
                       className="admin-del"
-                      title="Supprimer"
+                      data-tip="Supprimer" aria-label="Supprimer"
                       onClick={(e) => {
                         e.stopPropagation();
                         remove(r.id);

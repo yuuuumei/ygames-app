@@ -231,7 +231,7 @@ export default function AdminQuiz({
                     </div>
                     <button
                       className="admin-del"
-                      title="Supprimer"
+                      data-tip="Supprimer" aria-label="Supprimer"
                       onClick={(e) => {
                         e.stopPropagation();
                         remove(r.id);

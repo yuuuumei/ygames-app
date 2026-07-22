@@ -94,7 +94,7 @@ export default function FriendsPanel(props: Props) {
             <span className={f.online ? "dot dot-on" : "dot dot-idle"} />
             <button
               className="mini-btn no ghost"
-              title="Retirer cet ami"
+              data-tip="Retirer cet ami" aria-label="Retirer cet ami"
               onClick={() => props.onRemove(f.id)}
             >
               ✕

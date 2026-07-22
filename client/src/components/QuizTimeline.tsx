@@ -41,7 +41,8 @@ export default function QuizTimeline({
             key={i}
             className={"qtl-marker" + (m.correct ? " correct" : "") + (m.me ? " me" : "")}
             style={{ left: pct(m.year) }}
-            title={`${m.label} · ${m.year}`}
+            data-tip={`${m.label} · ${m.year}`}
+            aria-label={`${m.label} · ${m.year}`}
           >
             <span className="qtl-marker-dot" />
             <span className="qtl-marker-label">{m.label}</span>

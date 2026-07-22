@@ -122,3 +122,9 @@ class Game(ABC):
         """player_id -> {won, was_impostor, voted_correctly, gave_clue}.
         Vide par défaut (jeu sans progression)."""
         return {}
+
+    def match_summary(self) -> dict:
+        """Le récit de la partie, archivé dans l'historique des profils.
+        Tout est révélé : la partie est finie, il n'y a plus rien à cacher.
+        Vide par défaut (jeu sans détail intéressant à raconter)."""
+        return {}

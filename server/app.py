@@ -873,6 +873,24 @@ def ws_daily_guess(data):
         return {"error": error, "state": mod.public(payload, play)}
     db.daily_play_put(me["id"], mod.ID, day, new_play["guesses"],
                       new_play["solved"], new_play["finished"], new_play["score"])
+    # un défi qui vient de se terminer entre dans l'historique du profil
+    if new_play["finished"] and not play["finished"]:
+        final = mod.public(payload, new_play)
+        db.record_history([{
+            "user_id": me["id"], "game_id": mod.ID, "won": new_play["solved"],
+            "detail": {
+                "daily": True,
+                "day": day,
+                "tries": new_play["score"],
+                "summary": {
+                    "answer": final.get("answer"),
+                    "url": final.get("url"),
+                    # wordle stocke des chaînes, wikidle des dicts
+                    "guesses": [g if isinstance(g, str) else g.get("word")
+                                for g in new_play["guesses"]],
+                },
+            },
+        }])
     return {"state": mod.public(payload, new_play),
             "streak": db.daily_streak(me["id"], mod.ID, day)}
 
@@ -895,6 +913,103 @@ def ws_daily_scores(data):
             {**public_user(r), "solved": bool(r["solved"]), "score": r["score"]}
             for r in rows
         ],
+    }
+
+
+# =========================================================== STAIRS (WS)
+# Jeu d'arcade solo : on grimpe une tour aléatoire, 1 marche = 1 point.
+#
+# La simulation tourne sur le PC du joueur (impossible d'arbitrer du 60 fps
+# depuis Railway). Le serveur ne fait donc pas confiance au score brut : il
+# chronomètre lui-même la run entre `stairs_start` et `stairs_submit`, et
+# refuse tout ce qui est humainement infaisable. Entre potes ça suffit.
+
+import time as _time  # noqa: E402
+
+#: token -> {user_id, started}. En mémoire : une run perdue au redéploiement
+#: n'est pas grave, le joueur relance.
+_stairs_open: dict[str, dict] = {}
+
+# Seuil volontairement large : il doit bloquer un score fabriqué (« 99999
+# marches en 2 s »), jamais un joueur très rapide. Mieux vaut laisser passer
+# un tricheur discret que refuser le record légitime de quelqu'un.
+STAIRS_MIN_MS_PER_STEP = 60     # ~16 marches/s, au-delà c'est un script
+STAIRS_MAX_RUN_S = 3600         # une run ouverte depuis 1 h est périmée
+
+
+def _stairs_boards(me_id: int) -> dict:
+    ids = [me_id, *db.get_friend_ids(me_id)]
+    return {
+        scope: [
+            {**public_user(r), "score": r["score"], "runs": r["runs"],
+             "is_me": r["id"] == me_id}
+            for r in db.stairs_board(ids, scope)
+        ]
+        for scope in ("day", "week", "all")
+    }
+
+
+@socketio.on("stairs_start")
+def ws_stairs_start(_data=None):
+    """Ouvre une run : le serveur note l'heure de départ et rend un jeton."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    now = _time.time()
+    # ménage des runs abandonnées
+    for tok in [t for t, r in _stairs_open.items() if now - r["started"] > STAIRS_MAX_RUN_S]:
+        _stairs_open.pop(tok, None)
+    token = secrets.token_urlsafe(12)
+    _stairs_open[token] = {"user_id": me["id"], "started": now}
+    return {"token": token}
+
+
+@socketio.on("stairs_submit")
+def ws_stairs_submit(data):
+    """Clôt une run et l'enregistre si le score est plausible."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    d = data or {}
+    run = _stairs_open.pop(str(d.get("token", "")), None)
+    if not run or run["user_id"] != me["id"]:
+        return {"error": "Run inconnue — relance une partie."}
+
+    score = max(0, int(d.get("score", 0)))
+    coins = max(0, int(d.get("coins", 0)))
+    elapsed_ms = int((_time.time() - run["started"]) * 1000)
+
+    # plausibilité : le temps mesuré PAR LE SERVEUR doit tenir la route
+    if score and elapsed_ms < score * STAIRS_MIN_MS_PER_STEP:
+        return {"error": "Score refusé : trop rapide pour être vrai."}
+    # les gemmes ne tombent que sur une marche sur quelques-unes
+    coins = min(coins, score // 3 + 5)
+
+    db.stairs_record(me["id"], score, coins, elapsed_ms)
+    db.record_history([{
+        "user_id": me["id"], "game_id": "stairs", "won": False,
+        "detail": {
+            "score": score, "solo": True,
+            "summary": {"score": score, "coins": coins,
+                        "duration_ms": elapsed_ms},
+        },
+    }])
+    return {
+        "score": score, "coins": coins, "duration_ms": elapsed_ms,
+        "personal": db.stairs_personal(me["id"]),
+        "boards": _stairs_boards(me["id"]),
+    }
+
+
+@socketio.on("stairs_home")
+def ws_stairs_home(_data=None):
+    """Records perso + les trois classements, pour l'écran d'accueil du jeu."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    return {
+        "personal": db.stairs_personal(me["id"]),
+        "boards": _stairs_boards(me["id"]),
     }
 
 

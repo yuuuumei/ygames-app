@@ -117,7 +117,7 @@ export default function ProfileCustomize({
       {/* personnalisation — colonne droite */}
       <section className="prof-custom">
         <div className="prof-head">
-          <button className="tbl-back" onClick={onBack} title="Retour à la vitrine">
+          <button className="tbl-back" onClick={onBack} data-tip="Retour à la vitrine" aria-label="Retour à la vitrine">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="m15 18-6-6 6-6" />
             </svg>

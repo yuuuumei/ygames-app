@@ -429,7 +429,7 @@ function Correcting({ view, isHost, myPlayerId, act }: Props & { act: (a: object
                   <button
                     className={"quiz-grade good" + (e.grade === true ? " on" : "") + (e.grade == null && e.suggested === true ? " suggest" : "")}
                     onClick={() => act({ type: "grade", index: cIndex, player_id: e.id, correct: true })}
-                    title={e.suggested === true ? "Bonne réponse (suggéré)" : "Bonne réponse"}
+                    data-tip={e.suggested === true ? "Bonne réponse (suggéré)" : "Bonne réponse"} aria-label={e.suggested === true ? "Bonne réponse (suggéré)" : "Bonne réponse"}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <path d="M20 6 9 17l-5-5" />
@@ -438,7 +438,7 @@ function Correcting({ view, isHost, myPlayerId, act }: Props & { act: (a: object
                   <button
                     className={"quiz-grade bad" + (e.grade === false ? " on" : "") + (e.grade == null && e.suggested === false ? " suggest" : "")}
                     onClick={() => act({ type: "grade", index: cIndex, player_id: e.id, correct: false })}
-                    title={e.suggested === false ? "Mauvaise réponse (suggéré)" : "Mauvaise réponse"}
+                    data-tip={e.suggested === false ? "Mauvaise réponse (suggéré)" : "Mauvaise réponse"} aria-label={e.suggested === false ? "Mauvaise réponse (suggéré)" : "Mauvaise réponse"}
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <path d="M18 6 6 18M6 6l12 12" />
@@ -447,7 +447,7 @@ function Correcting({ view, isHost, myPlayerId, act }: Props & { act: (a: object
                   <button
                     className="quiz-grade doubt"
                     onClick={() => act({ type: "open_doubt", index: cIndex, player_id: e.id })}
-                    title="En cas de doute : au vote !"
+                    data-tip="En cas de doute : au vote !" aria-label="En cas de doute : au vote !"
                   >
                     🤔
                   </button>

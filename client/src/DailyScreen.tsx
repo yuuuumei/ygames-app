@@ -111,7 +111,7 @@ export default function DailyScreen({ ask, onClose }: { ask: Ask; onClose: () =>
       <div className="ambient" />
 
       <div className="dl-head">
-        <button className="dl-back" onClick={onClose} title="Retour">
+        <button className="dl-back" onClick={onClose} data-tip="Retour" aria-label="Retour">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="m15 18-6-6 6-6" />
           </svg>
@@ -364,7 +364,7 @@ function DailyGame({
       <div className="ambient" />
 
       <div className="dl-head dl-head-ingame">
-        <button className="dl-back" onClick={onBack} title="Retour aux défis">
+        <button className="dl-back" onClick={onBack} data-tip="Retour aux défis" aria-label="Retour aux défis">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="m15 18-6-6 6-6" />
           </svg>
