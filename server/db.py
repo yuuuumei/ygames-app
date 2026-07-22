@@ -135,6 +135,31 @@ def init_db() -> None:
             name       TEXT PRIMARY KEY,
             applied_at INTEGER NOT NULL
         );
+
+        -- ---- Défis du jour (jeux solo asynchrones) ----
+        -- Le défi d'un jeu pour une date donnée : identique pour TOUS.
+        -- `payload` = JSON (mot secret, article Wikipédia, etc.).
+        CREATE TABLE IF NOT EXISTS daily_puzzles (
+            game       TEXT NOT NULL,
+            day        TEXT NOT NULL,          -- 'AAAA-MM-JJ'
+            payload    TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            PRIMARY KEY (game, day)
+        );
+
+        -- La partie d'un joueur sur un défi (progression + résultat).
+        CREATE TABLE IF NOT EXISTS daily_plays (
+            user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            game       TEXT NOT NULL,
+            day        TEXT NOT NULL,
+            guesses    TEXT NOT NULL DEFAULT '[]',  -- JSON : essais du joueur
+            solved     INTEGER NOT NULL DEFAULT 0,
+            finished   INTEGER NOT NULL DEFAULT 0,
+            score      INTEGER NOT NULL DEFAULT 0,  -- nb d'essais utilisés
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY (user_id, game, day)
+        );
+        CREATE INDEX IF NOT EXISTS idx_daily_day ON daily_plays(game, day);
         """
     )
     # Migrations légères pour les bases déjà en prod (colonnes ajoutées après coup).
@@ -520,6 +545,113 @@ def game_breakdown(user_id: int) -> dict:
     ).fetchall()
     conn.close()
     return {r["game_id"]: {"played": r["played"], "wins": r["wins"] or 0} for r in rows}
+
+
+# --------------------------------------------------- défis du jour (solo)
+
+def daily_puzzle_get(game: str, day: str) -> dict | None:
+    """Le défi figé d'un jeu pour une date, ou None s'il n'existe pas encore."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT payload FROM daily_puzzles WHERE game = ? AND day = ?", (game, day)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return None
+    try:
+        return json.loads(row["payload"])
+    except (ValueError, TypeError):
+        return None
+
+
+def daily_puzzle_put(game: str, day: str, payload: dict) -> None:
+    """Fige le défi du jour (ignore si un autre process l'a déjà créé)."""
+    conn = get_db()
+    conn.execute(
+        "INSERT OR IGNORE INTO daily_puzzles (game, day, payload, created_at) "
+        "VALUES (?, ?, ?, ?)",
+        (game, day, json.dumps(payload, ensure_ascii=False), int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+def daily_play_get(user_id: int, game: str, day: str) -> dict:
+    """La partie en cours d'un joueur (essais, résolu, fini)."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT guesses, solved, finished, score FROM daily_plays "
+        "WHERE user_id = ? AND game = ? AND day = ?",
+        (user_id, game, day),
+    ).fetchone()
+    conn.close()
+    if not row:
+        return {"guesses": [], "solved": False, "finished": False, "score": 0}
+    try:
+        guesses = json.loads(row["guesses"])
+    except (ValueError, TypeError):
+        guesses = []
+    return {
+        "guesses": guesses,
+        "solved": bool(row["solved"]),
+        "finished": bool(row["finished"]),
+        "score": row["score"],
+    }
+
+
+def daily_play_put(user_id: int, game: str, day: str, guesses: list,
+                   solved: bool, finished: bool, score: int) -> None:
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO daily_plays (user_id, game, day, guesses, solved, finished, score, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(user_id, game, day) DO UPDATE SET "
+        "guesses=excluded.guesses, solved=excluded.solved, finished=excluded.finished, "
+        "score=excluded.score, updated_at=excluded.updated_at",
+        (user_id, game, day, json.dumps(guesses, ensure_ascii=False),
+         1 if solved else 0, 1 if finished else 0, score, int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+def daily_results(game: str, day: str, user_ids: list[int]) -> list[dict]:
+    """Les résultats du jour pour un ensemble de joueurs (moi + mes potes)."""
+    if not user_ids:
+        return []
+    marks = ",".join("?" for _ in user_ids)
+    conn = get_db()
+    rows = conn.execute(
+        f"SELECT u.id AS id, u.discord_id, u.username, u.global_name, u.avatar, "
+        f"       p.solved, p.finished, p.score "
+        f"FROM daily_plays p JOIN users u ON u.id = p.user_id "
+        f"WHERE p.game = ? AND p.day = ? AND p.user_id IN ({marks}) AND p.finished = 1 "
+        f"ORDER BY p.solved DESC, p.score ASC",
+        (game, day, *user_ids),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def daily_streak(user_id: int, game: str, today: str) -> int:
+    """Nombre de jours consécutifs réussis jusqu'à aujourd'hui (inclus)."""
+    from datetime import date, timedelta
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT day FROM daily_plays WHERE user_id = ? AND game = ? AND solved = 1",
+        (user_id, game),
+    ).fetchall()
+    conn.close()
+    done = {r["day"] for r in rows}
+    try:
+        cur = date.fromisoformat(today)
+    except ValueError:
+        return 0
+    streak = 0
+    while cur.isoformat() in done:
+        streak += 1
+        cur -= timedelta(days=1)
+    return streak
 
 
 # ------------------------------------------------------------- catalogue

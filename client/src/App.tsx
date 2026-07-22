@@ -10,6 +10,7 @@ import FriendsRail from "./FriendsRail";
 import LoginScreen from "./LoginScreen";
 import ProfileScreen from "./ProfileScreen";
 import ProfileShowcase from "./ProfileShowcase";
+import DailyScreen from "./DailyScreen";
 import AdminScreen from "./AdminScreen";
 import SettingsScreen from "./SettingsScreen";
 import Splash from "./Splash";
@@ -18,6 +19,8 @@ import YMark from "./components/YMark";
 import Avatar from "./components/Avatar";
 import imposteurIcon from "./assets/imposteur-icon.png";
 import imposteurHero from "./assets/imposteur-hero.png";
+import quizIcon from "./assets/quiz-icon.jpg";
+import quizHero from "./assets/quiz-hero.jpg";
 import { ToastHost } from "./toast";
 import "./theme.css";
 import "./_legacy.css";
@@ -44,6 +47,7 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [showDailies, setShowDailies] = useState(false);
   const [viewedProfile, setViewedProfile] = useState<Profile | null>(null);
   const social = useSocial(screen.kind === "home");
 
@@ -106,6 +110,8 @@ function App() {
           adminOpen={adminOpen}
           setAdminOpen={setAdminOpen}
           onViewProfile={openProfile}
+          showDailies={showDailies}
+          setShowDailies={setShowDailies}
         />
       </div>
 
@@ -194,9 +200,11 @@ type BodyProps = {
   adminOpen: boolean;
   setAdminOpen: (v: boolean) => void;
   onViewProfile: (userId: number) => void;
+  showDailies: boolean;
+  setShowDailies: (v: boolean) => void;
 };
 
-function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen, onViewProfile }: BodyProps) {
+function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogin, onLogout, onCancelLogin, showProfile, setShowProfile, showSettings, setShowSettings, adminOpen, setAdminOpen, onViewProfile, showDailies, setShowDailies }: BodyProps) {
   if (screen.kind === "loading") {
     return <Splash version={version} />;
   }
@@ -214,6 +222,11 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
   }
 
   const { user } = screen;
+
+  // Défis du jour (jeux solo asynchrones).
+  if (showDailies && !social.lobby && !social.gameView) {
+    return <DailyScreen ask={social.ask} onClose={() => setShowDailies(false)} />;
+  }
 
   // Paramètres (accessible depuis le menu compte).
   if (showSettings && !social.lobby && !social.gameView) {
@@ -373,6 +386,7 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
       onOpenSettings={() => setShowSettings(true)}
       onLogout={onLogout}
       onViewProfile={onViewProfile}
+      onOpenDailies={() => setShowDailies(true)}
     />
   );
 }
@@ -388,6 +402,7 @@ function Launcher({
   onOpenSettings,
   onLogout,
   onViewProfile,
+  onOpenDailies,
 }: {
   user: User;
   social: ReturnType<typeof useSocial>;
@@ -397,11 +412,27 @@ function Launcher({
   onOpenSettings: () => void;
   onLogout: () => void;
   onViewProfile: (userId: number) => void;
+  onOpenDailies: () => void;
 }) {
   const [code, setCode] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const impostor = social.games.find((g) => g.id === "impostor");
   const onlineCount = social.friends.filter((f) => f.online).length;
+
+  // état des défis du jour, pour le bandeau (série + avancement)
+  const [daily, setDaily] = useState<{ done: number; total: number; streak: number } | null>(null);
+  useEffect(() => {
+    if (!social.connected) return;
+    social.ask("daily_list").then((r: any) => {
+      if (!r?.dailies) return;
+      const l = r.dailies as { finished: boolean; streak: number }[];
+      setDaily({
+        done: l.filter((d) => d.finished).length,
+        total: l.length,
+        streak: Math.max(0, ...l.map((d) => d.streak)),
+      });
+    });
+  }, [social.connected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function joinByCode(e: React.FormEvent) {
     e.preventDefault();
@@ -519,6 +550,14 @@ function Launcher({
             >
               <img className="gt-icon-img" src={imposteurIcon} alt="L'Imposteur" />
             </button>
+            <button
+              className="gt-icon gt-icon-game"
+              title="Quiz Culture"
+              disabled={!social.connected}
+              onClick={() => onPickGame("quiz")}
+            >
+              <img className="gt-icon-img" src={quizIcon} alt="Quiz Culture" />
+            </button>
             <div className="gt-icon locked" title="Spyfall — bientôt">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <line x1="6" y1="11" x2="10" y2="11" />
@@ -534,21 +573,8 @@ function Launcher({
                 </svg>
               </span>
             </div>
-            <div className="gt-icon locked" title="Quiz Culture — bientôt">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
-                <path d="M12 17h.01" />
-              </svg>
-              <span className="gt-lock">
-                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#5f6982" strokeWidth="3">
-                  <rect x="4" y="11" width="16" height="10" rx="2" />
-                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                </svg>
-              </span>
-            </div>
             <div className="games-bar-spacer" />
-            <span className="games-bar-count">2 à venir</span>
+            <span className="games-bar-count">1 à venir</span>
           </div>
 
           {/* hero : L'Imposteur */}
@@ -595,18 +621,67 @@ function Launcher({
             </div>
           </button>
 
-          {/* rangée bientôt */}
+          {/* catégorie : défis du jour (solo) */}
+          <button className="daily-strip" onClick={onOpenDailies} disabled={!social.connected}>
+            <span className="daily-strip-sheen" />
+            <span className="daily-strip-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+                <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5Z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            </span>
+            <div className="daily-strip-text">
+              <div className="daily-strip-top">
+                <span className="daily-strip-title">Défis du jour</span>
+                {(daily?.streak ?? 0) > 0 && (
+                  <span className="dl-mini-streak">
+                    <span className="dl-flame">🔥</span>
+                    <b className="mono">{daily!.streak}</b>
+                  </span>
+                )}
+              </div>
+              <div className="daily-strip-sub">
+                Le Mot du jour · Wikidle — en solo, et tu compares avec tes potes
+              </div>
+            </div>
+            {daily && daily.total > 0 && (
+              <span className="daily-strip-state">
+                <span className="daily-strip-dot" />
+                {daily.total} défis · {daily.done} terminé{daily.done > 1 ? "s" : ""}
+              </span>
+            )}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" strokeWidth="2.2">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+
+          {/* rangée : Quiz jouable + Spyfall à venir */}
           <div className="soon-row">
+            <button
+              className="game-card"
+              disabled={!social.connected}
+              onClick={() => onPickGame("quiz")}
+              style={{ animationDelay: "0.12s" }}
+            >
+              <img className="game-card-art" src={quizHero} alt="" />
+              <div className="game-card-scrim" />
+              <div className="game-card-content">
+                <span className="badge-live">
+                  <span />
+                  Jouable
+                </span>
+                <div>
+                  <div className="game-card-title">Quiz Culture</div>
+                  <div className="game-card-desc">
+                    Drapeaux, sons, langues, frise, Petit Bac… l'hôte corrige, le classement tranche.
+                  </div>
+                </div>
+              </div>
+            </button>
             <SoonCard
               name="Spyfall"
               desc="Un espion, un lieu secret, des questions qui piègent."
               glow="radial-gradient(80% 100% at 85% 0%, rgba(34,211,238,.14), transparent 60%)"
-              delay="0.12s"
-            />
-            <SoonCard
-              name="Quiz Culture"
-              desc="Le buzzer le plus rapide de la bande gagne."
-              glow="radial-gradient(80% 100% at 85% 0%, rgba(255,194,75,.12), transparent 60%)"
               delay="0.18s"
             />
           </div>

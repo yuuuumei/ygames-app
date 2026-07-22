@@ -792,6 +792,112 @@ def ws_profile_set(data):
     return {"equipped": cosmetics}
 
 
+# ==================================================== défis du jour (WS)
+# Jeux SOLO asynchrones : pas de lobby, pas de GameRunner. Le défi du jour
+# est figé en base (identique pour tous), la progression est sauvegardée,
+# et une fois fini on voit le résultat de ses potes.
+
+from games import dailies as dl  # noqa: E402
+
+
+def _daily_payload(mod, day: str) -> dict:
+    """Le défi figé du jour : on le crée à la première demande."""
+    payload = db.daily_puzzle_get(mod.ID, day)
+    if payload is None:
+        db.daily_puzzle_put(mod.ID, day, mod.new_puzzle(day))
+        payload = db.daily_puzzle_get(mod.ID, day) or mod.new_puzzle(day)
+    return payload
+
+
+@socketio.on("daily_list")
+def ws_daily_list(_data=None):
+    """La liste des défis du jour + mon avancement sur chacun."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    day = dl.today()
+    friend_ids = db.get_friend_ids(me["id"])
+    out = []
+    for mod in dl.DAILIES.values():
+        play = db.daily_play_get(me["id"], mod.ID, day)
+        # qui a déjà joué aujourd'hui (moi + mes potes), pour la comparaison
+        results = db.daily_results(mod.ID, day, [me["id"], *friend_ids])
+        others = [r for r in results if r["id"] != me["id"]]
+        my_rank = next((i + 1 for i, r in enumerate(results) if r["id"] == me["id"]), None)
+        out.append({
+            "id": mod.ID, "name": mod.NAME, "icon": mod.ICON, "desc": mod.DESC,
+            "finished": play["finished"], "solved": play["solved"],
+            "score": play["score"],
+            "streak": db.daily_streak(me["id"], mod.ID, day),
+            "friends_done": len(others),
+            "friends": [
+                {"display_name": public_user(r)["display_name"],
+                 "avatar_url": public_user(r)["avatar_url"]}
+                for r in others[:3]
+            ],
+            "my_rank": my_rank,
+            "total_done": len(results),
+        })
+    return {"day": day, "dailies": out}
+
+
+@socketio.on("daily_state")
+def ws_daily_state(data):
+    """Mon état actuel sur un défi (reprise de partie)."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    mod = dl.get(str((data or {}).get("game", "")))
+    if not mod:
+        return {"error": "Défi inconnu."}
+    day = dl.today()
+    payload = _daily_payload(mod, day)
+    play = db.daily_play_get(me["id"], mod.ID, day)
+    return {"day": day, "state": mod.public(payload, play)}
+
+
+@socketio.on("daily_guess")
+def ws_daily_guess(data):
+    """Joue un essai sur un défi du jour."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    mod = dl.get(str((data or {}).get("game", "")))
+    if not mod:
+        return {"error": "Défi inconnu."}
+    day = dl.today()
+    payload = _daily_payload(mod, day)
+    play = db.daily_play_get(me["id"], mod.ID, day)
+    error, new_play = mod.guess(payload, play, str((data or {}).get("text", "")))
+    if error:
+        return {"error": error, "state": mod.public(payload, play)}
+    db.daily_play_put(me["id"], mod.ID, day, new_play["guesses"],
+                      new_play["solved"], new_play["finished"], new_play["score"])
+    return {"state": mod.public(payload, new_play),
+            "streak": db.daily_streak(me["id"], mod.ID, day)}
+
+
+@socketio.on("daily_scores")
+def ws_daily_scores(data):
+    """Les résultats du jour : moi + mes potes (parties terminées)."""
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    game = str((data or {}).get("game", ""))
+    if not dl.get(game):
+        return {"error": "Défi inconnu."}
+    day = dl.today()
+    ids = [me["id"], *db.get_friend_ids(me["id"])]
+    rows = db.daily_results(game, day, ids)
+    return {
+        "day": day,
+        "results": [
+            {**public_user(r), "solved": bool(r["solved"]), "score": r["score"]}
+            for r in rows
+        ],
+    }
+
+
 # ============================================================ admin (WS)
 # Back-office : gestion du catalogue de cosmétiques. Réservé aux admins.
 
