@@ -26,6 +26,30 @@ export const KIND_LABEL: Record<ReleaseNote["sections"][0]["kind"], string> = {
 
 export const CHANGELOG: ReleaseNote[] = [
   {
+    version: "0.13.0",
+    date: "2026-07-23",
+    title: "Skribbl",
+    headline:
+      "Dessine, fais deviner — le jeu de crayon en soirée, avec pot de peinture et 24 couleurs.",
+    sections: [
+      {
+        kind: "new",
+        items: [
+          "Skribbl : chacun son tour, un joueur dessine un mot secret et les autres tapent leurs propositions. Plus tu trouves vite, plus tu marques — et le dessinateur aussi.",
+          "Outils de dessin : crayon, pot de peinture, gomme, quatre épaisseurs et une palette de 24 couleurs.",
+          "Des lettres du mot se dévoilent au fil du temps, et un « tu brûles » privé quand tu approches.",
+          "Réglages depuis la table : nombre de manches, temps par dessin, difficulté des mots (banque de 230 mots).",
+        ],
+      },
+      {
+        kind: "tweak",
+        items: [
+          "Un lien de téléchargement à jour se trouve toujours sur la page des versions du projet.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.12.0",
     date: "2026-07-22",
     title: "STAIRS, profil refondu et historique détaillé",

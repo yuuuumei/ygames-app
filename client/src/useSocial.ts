@@ -214,7 +214,7 @@ export type GameMeta = {
 };
 
 /** Les jeux qui ont déjà leur écran côté client. */
-export const PLAYABLE_GAMES = new Set(["impostor", "quiz", "stairs"]);
+export const PLAYABLE_GAMES = new Set(["impostor", "quiz", "stairs", "skribbl"]);
 
 type SocialState = {
   friends: Friend[];
@@ -479,6 +479,21 @@ export function useSocial(loggedIn: boolean) {
         }
         socket.emit("profile_view", { user_id: userId }, (resp: any) => resolve(resp ?? {}));
       }),
+    /** Émission « tire et oublie », sans attendre d'accusé de réception.
+     *  Pour les flux très fréquents (les traits de Skribbl) : attendre un ack
+     *  à chaque trait ajouterait un aller-retour par segment de ligne. */
+    push: (event: string, data: object = {}) => {
+      socketRef.current?.emit(event, data);
+    },
+    /** S'abonne à un événement serveur. Retourne la fonction de désabonnement,
+     *  à appeler au démontage — sinon les écrans fantômes continuent d'écouter. */
+    on: (event: string, handler: (data: any) => void) => {
+      const socket = socketRef.current;
+      socket?.on(event, handler);
+      return () => {
+        socket?.off(event, handler);
+      };
+    },
     // requête générique avec ack (renvoie toute la réponse) — pour l'admin
     ask: (event: string, data: object = {}) =>
       new Promise<any>((resolve) => {

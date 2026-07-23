@@ -6040,6 +6040,9 @@
 .pv-gm.wiki {
   background: linear-gradient(140deg, #12303a, #0e1a20);
 }
+.pv-gm.skribbl {
+  background: linear-gradient(140deg, #ff8a3d, #eb459e);
+}
 .pv-gm.stairs {
   background: linear-gradient(140deg, #7c6cff, #22d3ee);
 }
@@ -9400,4 +9403,750 @@ kbd.st-kbd {
 }
 .pn-list li::marker {
   color: var(--txt-3);
+}
+
+/* ============================================================
+   SKRIBBL — dessine et fais deviner, d'après la maquette.
+   ============================================================ */
+@keyframes skTimerPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 77, 94, 0.5);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(255, 77, 94, 0);
+  }
+}
+@keyframes skPencil {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes skHot {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes skPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sk {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------------- barre du haut ---------------- */
+.sk-top {
+  position: relative;
+  z-index: 5;
+  height: 70px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.sk-timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* anneau de progression : `--p` est écrit par React à chaque seconde */
+.sk-timer-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--accent) var(--p, 100%), rgba(255, 255, 255, 0.08) 0);
+}
+.sk-timer-ring i {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--panel);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  font-style: normal;
+  color: var(--txt);
+}
+.sk-timer.urgent .sk-timer-ring {
+  background: conic-gradient(var(--danger) var(--p, 100%), rgba(255, 255, 255, 0.08) 0);
+  animation: skTimerPulse 1s ease-in-out infinite;
+}
+.sk-timer.urgent .sk-timer-ring i {
+  color: var(--danger);
+}
+.sk-timer-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+}
+
+.sk-word {
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+.sk-word-label {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+  font-weight: 700;
+}
+.sk-word-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.sk-word-hint {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.42em;
+  padding-left: 0.42em; /* compense l'espace ajouté après la dernière lettre */
+  margin-top: 2px;
+}
+.sk-word-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--txt-2);
+  margin-top: 4px;
+}
+
+.sk-round {
+  text-align: right;
+  flex-shrink: 0;
+}
+.sk-round-n {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+}
+.sk-round-l {
+  font-size: 11px;
+  color: var(--txt-3);
+  margin-top: 1px;
+}
+
+.sk-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* ---------------- colonne des joueurs ---------------- */
+.sk-players {
+  width: 230px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+}
+.sk-col-head {
+  flex-shrink: 0;
+  padding: 14px 18px 10px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+  font-weight: 700;
+}
+.sk-players-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sk-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: var(--r-card);
+  background: linear-gradient(158deg, var(--card), #0f1119);
+  border: 1px solid var(--line);
+  transition: border-color 0.16s var(--ease);
+}
+.sk-player.drawing {
+  background: radial-gradient(120% 130% at 100% 0, rgba(124, 108, 255, 0.18), transparent 60%),
+    linear-gradient(158deg, #171a2b, #0f1119);
+  border-color: rgba(124, 108, 255, 0.5);
+}
+.sk-player.found {
+  border-color: rgba(67, 209, 122, 0.4);
+}
+.sk-player.off {
+  opacity: 0.45;
+}
+.sk-rank {
+  width: 16px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--txt-3);
+}
+.sk-player.lead .sk-rank {
+  color: var(--gold);
+}
+.sk-player.lead .avatar,
+.sk-player.lead .avatar-fallback {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.sk-player-text {
+  flex: 1;
+  min-width: 0;
+}
+.sk-player-name {
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sk-you {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--accent);
+  background: rgba(124, 108, 255, 0.16);
+  padding: 1px 5px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.sk-player-score {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--txt-2);
+  margin-top: 1px;
+}
+.sk-pencil {
+  flex-shrink: 0;
+  color: var(--accent);
+  animation: skPencil 1.4s ease-in-out infinite;
+  transform-origin: bottom left;
+}
+.sk-check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--online);
+  display: grid;
+  place-items: center;
+  color: #04140a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ---------------- la toile ---------------- */
+.sk-stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+.sk-canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--r-panel);
+  background: #fbfbf9;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.sk-canvas-wrap.drawable {
+  cursor: crosshair;
+}
+.sk-canvas-wrap.tool-fill {
+  cursor: cell;
+}
+.sk-canvas-wrap.tool-eraser {
+  cursor: grab;
+}
+.sk-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none; /* sinon le geste scrolle au lieu de dessiner */
+}
+
+/* voile : choix du mot, révélation */
+.sk-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: var(--r-panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+  background: rgba(8, 9, 14, 0.74);
+  backdrop-filter: blur(6px);
+  animation: fade 0.2s var(--ease) both;
+}
+.sk-veil-label {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--txt-2);
+  font-weight: 700;
+}
+.sk-veil-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  margin-top: 6px;
+}
+.sk-veil-sub {
+  font-size: 12.5px;
+  color: var(--txt-3);
+  margin-top: 20px;
+}
+.sk-choices {
+  display: flex;
+  gap: 14px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.sk-choice {
+  padding: 20px 26px;
+  border-radius: 14px;
+  background: linear-gradient(158deg, #1c2030, #12141d);
+  border: 1px solid var(--line-2);
+  color: var(--txt);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.16s var(--spring), border-color 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+.sk-choice:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px rgba(124, 108, 255, 0.3);
+}
+.sk-reveal-word {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 66px;
+  letter-spacing: -0.01em;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #a99cff, var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: skPop 0.4s var(--spring) both;
+}
+.sk-reveal-list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  max-width: 100%;
+}
+.sk-reveal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 13px;
+}
+.sk-reveal-row span {
+  flex: 1;
+  text-align: left;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+.sk-reveal-row b {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--online);
+}
+
+/* ---------------- barre d'outils ---------------- */
+.sk-tools {
+  margin-top: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+.sk-tool-group {
+  display: flex;
+  gap: 7px;
+}
+.sk-tool {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  color: var(--txt-2);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.sk-tool:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--txt);
+}
+.sk-tool.on {
+  background: linear-gradient(135deg, var(--accent), #5a49e0);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(124, 108, 255, 0.4);
+}
+.sk-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line-2);
+}
+.sk-swatches {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: 18px;
+  gap: 4px;
+}
+.sk-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s var(--spring);
+}
+.sk-swatch:hover {
+  transform: scale(1.18);
+}
+.sk-swatch.on {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px #fff;
+}
+.sk-sizes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sk-size {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.sk-size:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.sk-size.on {
+  border-color: var(--accent);
+  background: rgba(124, 108, 255, 0.14);
+}
+.sk-size span {
+  display: block;
+  border-radius: 50%;
+  background: var(--txt);
+}
+.sk-tool-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 7px;
+}
+.sk-act {
+  height: 40px;
+  padding: 0 13px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--txt-2);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.sk-act:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--txt);
+}
+.sk-act.danger:hover {
+  background: var(--danger);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* ---------------- chat ---------------- */
+.sk-chat {
+  width: 270px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+}
+.sk-chat-head {
+  flex-shrink: 0;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+  font-weight: 700;
+}
+.sk-chat-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sk-chat-line {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--txt-2);
+}
+.sk-chat-line b {
+  color: var(--txt);
+  font-weight: 700;
+  margin-right: 6px;
+}
+.sk-chat-line.system {
+  font-style: italic;
+  color: var(--txt-3);
+  font-size: 12px;
+}
+.sk-chat-line.found {
+  background: rgba(67, 209, 122, 0.12);
+  border: 1px solid rgba(67, 209, 122, 0.36);
+  border-radius: 9px;
+  padding: 8px 11px;
+  color: #59e08c;
+  font-weight: 700;
+}
+.sk-chat-foot {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  padding: 12px 14px;
+}
+.sk-close-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: radial-gradient(120% 100% at 50% 0, rgba(255, 194, 75, 0.2), transparent),
+    rgba(255, 194, 75, 0.1);
+  border: 1px solid rgba(255, 194, 75, 0.4);
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 8px;
+  border-radius: 9px;
+  margin-bottom: 10px;
+  animation: skHot 1.1s ease-in-out infinite;
+}
+.sk-chat-form input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 11px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s var(--ease);
+}
+.sk-chat-form input:focus {
+  border-color: rgba(34, 211, 238, 0.6);
+}
+.sk-chat-form input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------------- fin de partie ---------------- */
+.sk-over {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow-y: auto;
+  background: radial-gradient(120% 70% at 50% -5%, rgba(124, 108, 255, 0.2), transparent 55%),
+    radial-gradient(90% 60% at 50% 120%, rgba(34, 211, 238, 0.12), transparent 60%),
+    linear-gradient(180deg, #0c0e16, #06070c);
+}
+.sk-over-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: rise 0.4s var(--ease) both;
+}
+.sk-kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+  font-weight: 700;
+}
+.sk-over-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  letter-spacing: -0.02em;
+  margin: 8px 0 0;
+}
+.sk-over-you {
+  margin-top: 10px;
+  font-size: 15px;
+  color: var(--gold);
+  font-weight: 700;
+}
+.sk-podium {
+  width: min(520px, 92vw);
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sk-podium-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(158deg, var(--card), #0f1119);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 13px 18px;
+}
+.sk-podium-row.first {
+  background: radial-gradient(120% 130% at 100% 0, rgba(255, 194, 75, 0.16), transparent 55%),
+    linear-gradient(158deg, #1c1810, #12100a);
+  border-color: rgba(255, 194, 75, 0.42);
+}
+.sk-podium-row.me {
+  border-color: rgba(124, 108, 255, 0.55);
+}
+.sk-podium-row .sk-rank {
+  width: 30px;
+  font-size: 15px;
+}
+.sk-podium-row.first .sk-rank,
+.sk-podium-row.first .sk-podium-score {
+  color: var(--gold);
+}
+.sk-podium-row.first .avatar,
+.sk-podium-row.first .avatar-fallback {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(255, 194, 75, 0.4);
+}
+.sk-podium-name {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.sk-podium-score {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.sk-btn {
+  margin-top: 28px;
+  height: 50px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--accent), #5a49e0);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(124, 108, 255, 0.4);
+  transition: transform 0.16s var(--spring);
+}
+.sk-btn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1100px) {
+  .sk-players {
+    width: 180px;
+  }
+  .sk-chat {
+    width: 224px;
+  }
 }

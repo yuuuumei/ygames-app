@@ -17,6 +17,7 @@ import games.impostor.game  # noqa: F401
 import games.spyfall.game  # noqa: F401
 import games.quiz.game  # noqa: F401
 import games.stairs.game  # noqa: F401
+import games.skribbl.game  # noqa: F401
 
 # lobby code -> session
 # session = {"game_id", "runner", "user_ids", "host_id", "stats_saved"}

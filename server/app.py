@@ -916,6 +916,39 @@ def ws_daily_scores(data):
     }
 
 
+# ========================================================== SKRIBBL (WS)
+# Canal dédié au dessin.
+#
+# Un trait NE PEUT PAS passer par `game_action` : le GameRunner
+# resynchronise TOUS les joueurs après chaque action, et chaque sync
+# recalcule au passage la table des cosmétiques. À 20 traits/seconde
+# et 8 joueurs, ça ferait 160 vues complètes par seconde pour dessiner
+# une ligne. Ici on écrit le trait dans le tampon du jeu et on le
+# rediffuse tel quel : rien d'autre ne bouge.
+
+@socketio.on("skribbl_draw")
+def ws_skribbl_draw(data):
+    me = current_user()
+    if not me:
+        return {"error": "non authentifié"}
+    lobby = lb.get(me["id"])
+    session = gs.get(lobby["code"]) if lobby else None
+    if not session or session["game_id"] != "skribbl":
+        return {"error": "Pas de partie de dessin en cours."}
+
+    game = session["runner"].game
+    stroke = (data or {}).get("stroke") or {}
+    # add_stroke refuse si l'émetteur n'est pas le dessinateur du moment :
+    # c'est LA garantie qu'un joueur ne peut pas vandaliser la toile.
+    if not game.add_stroke(str(me["id"]), stroke):
+        return {"ok": False}
+
+    for uid in session["user_ids"]:
+        if uid != me["id"]:                   # l'auteur a déjà tracé chez lui
+            emit_to_user("skribbl_stroke", stroke, uid)
+    return {"ok": True}
+
+
 # =========================================================== STAIRS (WS)
 # Jeu d'arcade solo : on grimpe une tour aléatoire, 1 marche = 1 point.
 #

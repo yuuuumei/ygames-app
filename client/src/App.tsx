@@ -14,6 +14,7 @@ import DailyScreen from "./DailyScreen";
 import StairsScreen from "./StairsScreen";
 import StairsRaceScreen from "./StairsRaceScreen";
 import PatchNotes, { hasUnseenNotes } from "./PatchNotes";
+import SkribblScreen from "./SkribblScreen";
 import AdminScreen from "./AdminScreen";
 import SettingsScreen from "./SettingsScreen";
 import Splash from "./Splash";
@@ -26,6 +27,8 @@ import quizIcon from "./assets/quiz-icon.jpg";
 import quizHero from "./assets/quiz-hero.jpg";
 import stairsHero from "./assets/stairs-hero.jpg";
 import stairsIcon from "./assets/stairs-icon.jpg";
+import skribblHero from "./assets/skribbl-hero.jpg";
+import skribblIcon from "./assets/skribbl-icon.jpg";
 import { ToastHost, toast } from "./toast";
 import "./theme.css";
 import "./_legacy.css";
@@ -314,6 +317,19 @@ function Body({ screen, busy, version, social, pickedGame, setPickedGame, onLogi
     };
     if ((social.gameView as any).game === "quiz") {
       return <QuizScreen view={social.gameView as any} {...gameProps} />;
+    }
+    if ((social.gameView as any).game === "skribbl") {
+      return (
+        <SkribblScreen
+          view={social.gameView as any}
+          me={gameProps.myPlayerId}
+          isHost={gameProps.isHost}
+          onAction={gameProps.onAction}
+          onEnd={gameProps.onEnd}
+          push={social.push}
+          subscribe={social.on}
+        />
+      );
     }
     if ((social.gameView as any).game === "stairs") {
       return (
@@ -632,6 +648,15 @@ function Launcher({
             >
               <img className="gt-icon-img" src={stairsIcon} alt="STAIRS" />
             </button>
+            <button
+              className="gt-icon gt-icon-game"
+              data-tip="Skribbl"
+              aria-label="Skribbl"
+              disabled={!social.connected}
+              onClick={() => onPickGame("skribbl")}
+            >
+              <img className="gt-icon-img" src={skribblIcon} alt="Skribbl" />
+            </button>
             <div className="gt-icon locked" data-tip="Spyfall — bientôt" aria-label="Spyfall — bientôt">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <line x1="6" y1="11" x2="10" y2="11" />
@@ -784,18 +809,33 @@ function Launcher({
             </button>
           </div>
 
-          {/* à venir */}
+          {/* rangée : Skribbl jouable + Spyfall à venir */}
           <div className="soon-row">
+            <button
+              className="game-card"
+              disabled={!social.connected}
+              onClick={() => onPickGame("skribbl")}
+              style={{ animationDelay: "0.24s" }}
+            >
+              <img className="game-card-art" src={skribblHero} alt="" />
+              <div className="game-card-scrim" />
+              <div className="game-card-content">
+                <span className="badge-live">
+                  <span />
+                  Jouable
+                </span>
+                <div>
+                  <div className="game-card-title">Skribbl</div>
+                  <div className="game-card-desc">
+                    Dessine, fais deviner. Plus on trouve vite, plus ça rapporte — au devineur comme au dessinateur.
+                  </div>
+                </div>
+              </div>
+            </button>
             <SoonCard
               name="Spyfall"
               desc="Un espion, un lieu secret, des questions qui piègent."
               glow="radial-gradient(80% 100% at 85% 0%, rgba(34,211,238,.14), transparent 60%)"
-              delay="0.24s"
-            />
-            <SoonCard
-              name="Skribbl"
-              desc="Dessine, fais deviner, et assume tes talents artistiques."
-              glow="radial-gradient(80% 100% at 85% 0%, rgba(255,194,75,.14), transparent 60%)"
               delay="0.3s"
             />
           </div>

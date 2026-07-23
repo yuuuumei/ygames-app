@@ -24,7 +24,18 @@ def decide(game_id: str, view: dict, pid: str) -> dict | None:
         return _quiz(view, pid)
     if game_id == "impostor":
         return _impostor(view, pid)
+    if game_id == "skribbl":
+        return _skribbl(view, pid)
     # Jeux sans IA de bot : le bot reste spectateur.
+    return None
+
+
+def _skribbl(view: dict, pid: str) -> dict | None:
+    """Un bot ne sait pas dessiner. S'il est designe dessinateur, il passe
+    immediatement son tour — sinon la table attendrait 95 secondes devant
+    une toile blanche. Le reste du temps, il regarde."""
+    if view.get("is_drawer") and view.get("phase") in ("choosing", "drawing"):
+        return {"type": "skip"}
     return None
 
 

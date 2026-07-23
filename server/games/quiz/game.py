@@ -24,7 +24,7 @@ import time
 import db
 from core.contract import Event, Game, GameMeta, Option, Player
 from core.registry import register
-from games.quiz.matching import is_correct
+from core.matching import is_correct
 
 POINTS_PER_CORRECT = 1  # points fixes par bonne réponse
 

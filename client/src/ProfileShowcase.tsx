@@ -8,6 +8,7 @@ const GAME_META: Record<string, { name: string; icon: string; cls: string }> = {
   wordle: { name: "Le Mot du jour", icon: "MOT", cls: "mot" },
   wikidle: { name: "Wikidle", icon: "📖", cls: "wiki" },
   stairs: { name: "STAIRS", icon: "🏔️", cls: "stairs" },
+  skribbl: { name: "Skribbl", icon: "🎨", cls: "skribbl" },
   spyfall: { name: "Spyfall", icon: "🗺️", cls: "spy" },
 };
 
